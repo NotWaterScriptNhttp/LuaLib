@@ -4,7 +4,8 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # User added folders
-LuaLibTests/
+Test/
+LuaLibTests/ 
 LuaLib/Tests/
 
 # User-specific files
