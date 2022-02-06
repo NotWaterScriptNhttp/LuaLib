@@ -2,7 +2,7 @@
 
 namespace LuaLib.Lua.Emit
 {
-    public struct Local
+    public class Local
     {
         public string Varname;
         public int StartPC;

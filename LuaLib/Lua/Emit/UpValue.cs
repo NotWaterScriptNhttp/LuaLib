@@ -1,6 +1,6 @@
 ﻿namespace LuaLib.Lua.Emit
 {
-    public struct UpValue
+    public class UpValue
     {
         public string Name;
 

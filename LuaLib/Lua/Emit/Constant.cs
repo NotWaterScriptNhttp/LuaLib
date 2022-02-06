@@ -15,7 +15,7 @@ namespace LuaLib.Lua.Emit
         THREAD = 8
     }
 
-    public struct Constant
+    public class Constant
     {
         public ConstantType Type;
         public dynamic Value;
