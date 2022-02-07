@@ -52,6 +52,7 @@ namespace LuaLib.Lua.Emit
             return (~MASK1(n, p));
         }
 
+        #region Getters
         private static long GetOpcode(uint data)
         {
             return (data >> POS_OP) & MASK1(SIZE_OP, 0);
@@ -76,6 +77,35 @@ namespace LuaLib.Lua.Emit
         {
             return (GetBx(data) - MAXARG_sBx);
         }
+        #endregion
+        #region Setters
+        private static long SetOpcode(uint inst, OpCodes opcode)
+        {
+            uint op = (uint)opcode;
+
+            return (inst & MASK0(SIZE_OP, POS_OP)) | ((op << POS_OP) & MASK1(SIZE_OP, POS_OP));
+        }
+        private static long SetA(uint inst, uint A)
+        {
+            return (inst & MASK0(SIZE_A, POS_A)) | (A << POS_A) & MASK1(SIZE_A, POS_A);
+        }
+        private static long SetB(uint inst, uint B)
+        {
+            return (inst & MASK0(SIZE_B, POS_B)) | (B << POS_B) & MASK1(SIZE_B, POS_B);
+        }
+        private static long SetC(uint inst, uint C)
+        {
+            return (inst & MASK0(SIZE_C, POS_C)) | (C << POS_C) & MASK1(SIZE_C, POS_C);
+        }
+        private static long SetBx(uint inst, uint Bx)
+        {
+            return (inst & MASK0(SIZE_Bx, POS_Bx)) | (Bx << POS_Bx) & MASK1(SIZE_Bx, POS_Bx);
+        }
+        private static long SetsBx(uint inst, uint sBx)
+        {
+            return SetBx(inst, sBx + MAXARG_sBx);
+        }
+        #endregion
         #endregion
 
         private void UpdateRegisters(uint data)
@@ -104,6 +134,33 @@ namespace LuaLib.Lua.Emit
             Opcode = (OpCodes)GetOpcode(data);
 
             UpdateRegisters(data);
+        }
+
+        internal byte[] GetInstructionBytes()
+        {
+            uint inst = 0;
+
+            if (!OpcodeMappings.Mappings.TryGetValue(Opcode, out OpcodeMapping mapping))
+                throw new Exception($"Mapping for {Opcode} was not found please add it");
+
+            inst = (uint)SetOpcode(inst, Opcode);
+
+            if (mapping.UsesA)
+                inst = (uint)SetA(inst, (uint)A);
+
+            if (mapping.UsesB)
+                inst = (uint)SetB(inst, (uint)B);
+
+            if (mapping.UsesC)
+                inst = (uint)SetC(inst, (uint)C);
+
+            if (mapping.UsesBx)
+                inst = (uint)SetBx(inst, (uint)Bx);
+
+            if (mapping.UsessBx)
+                inst = (uint)SetsBx(inst, (uint)sBx);
+
+            return BitConverter.GetBytes(inst);
         }
 
         public override string ToString()
@@ -173,8 +230,8 @@ namespace LuaLib.Lua.Emit
                 }
             }
 
-            builder.Append($" UsedRegisters: {registersUsed},\n");
-            builder.Append(inQueue.Substring(0, inQueue.Length - 2));
+            builder.Append($" UsedRegisters: {registersUsed.Substring(0, registersUsed.Length - 1)},\n");
+            builder.Append(inQueue.Substring(0, inQueue.Length - 2) + "\n");
             builder.Append("} - Instruction");
 
             return builder.ToString();

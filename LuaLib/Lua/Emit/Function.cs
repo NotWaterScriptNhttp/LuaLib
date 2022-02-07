@@ -79,7 +79,7 @@ namespace LuaLib.Lua.Emit
 
         public int[] lineinfo;
 
-        public string FuncName { get; private set; } = "Unknown";
+        public string FuncName { get; internal set; } = "";
 
         private Function() {}
 

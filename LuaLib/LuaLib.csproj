@@ -53,6 +53,8 @@
     <Compile Include="Lua\LuaHelpers\LuaReader.cs" />
     <Compile Include="Lua\LuaHelpers\LuaWriter.cs" />
     <Compile Include="Lua\LuaHelpers\OpcodeMappings.cs" />
+    <Compile Include="Lua\LuaVersion.cs" />
+    <Compile Include="Lua\WriterOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\Chunk.cs" />
     <Compile Include="Tests\Emit\Constant.cs" />

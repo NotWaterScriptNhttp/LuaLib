@@ -5,14 +5,6 @@ namespace LuaLib.Lua.LuaHelpers
 {
     public class LuaHeader
     {
-        public enum LuaVersion
-        {
-            LUA_VERSION_5_1 = 0x51,
-            LUA_VERSION_5_2 = 0x52,
-            LUA_VERSION_5_3 = 0x53,
-            LUA_VERSION_5_4 = 0x54,
-        }
-
         public LuaVersion Version { get; private set; }
         public byte Format { get; private set; }
         public bool IsLittleEndian { get; private set; }

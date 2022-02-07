@@ -13,9 +13,14 @@ namespace LuaLib.Lua
 
         private Chunk() {}
 
-        public void Write(string out_file)
+        public bool Write(string out_file, WriterOptions options = null)
         {
+            if (options == null)
+                options = new WriterOptions();
 
+            new LuaWriter(this, options).Write(out_file);
+
+            return true;
         }
 
         public static Chunk Load(string file)
@@ -29,7 +34,7 @@ namespace LuaLib.Lua
 
             chunk.Header = new LuaHeader(lr);
 
-            if (chunk.Header.Version != LuaHeader.LuaVersion.LUA_VERSION_5_1)
+            if (chunk.Header.Version != LuaVersion.LUA_VERSION_5_1)
                 throw new Exception($"Only 5.1 is supported at this moment");
 
             lr.UpdateEndian(chunk.Header.IsLittleEndian);
@@ -40,6 +45,6 @@ namespace LuaLib.Lua
             return chunk;
         }
 
-        public static void Write(Chunk chunk, string file) => chunk.Write(file);
+        public static bool Write(Chunk chunk, string file, WriterOptions options = null) => chunk.Write(file, options);
     }
 }
