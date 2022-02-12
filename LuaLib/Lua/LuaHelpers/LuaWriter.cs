@@ -12,7 +12,37 @@ namespace LuaLib.Lua.LuaHelpers
 {
     internal class LuaWriter
     {
-        private List<byte> dataToWrite;
+        private class CustomWriter : BinaryWriter
+        {
+            private bool Is64Bit = true;
+
+            public CustomWriter(Stream output) : base(output) {}
+
+            public void SetArch(bool is64) => Is64Bit = is64;
+
+            public void LWrite(string data)
+            {
+                if (data == null)
+                {
+                    if (Is64Bit)
+                        Write((long)0);
+                    else Write(0);
+                    return;
+                }
+
+                if (!data.EndsWith("\0"))
+                    data += '\0';
+
+                if (Is64Bit)
+                    Write((long)data.Length);
+                else Write(data.Length);
+
+                Write(Encoding.UTF8.GetBytes(data));
+            }
+        }
+
+        private MemoryStream writerOutput;
+        private CustomWriter writer;
         private bool Is64;
         private bool IsLittle;
 
@@ -29,11 +59,10 @@ namespace LuaLib.Lua.LuaHelpers
             return data;
         }
 
-        private byte[] CreateHeader(Chunk c, bool UseOld, LuaVersion ver)
+        private void DumpHeader(Chunk c, bool UseOld, LuaVersion ver)
         {
-            List<byte> holder = new List<byte>();
-
-            holder.AddRange(new byte[4]
+            // Write the luac file sig
+            writer.Write(new byte[4]
             {
                 0x1B,
                 0x4C,
@@ -43,135 +72,146 @@ namespace LuaLib.Lua.LuaHelpers
 
             LuaHeader header = c.Header;
 
+            // Write the lua version the file is using
             if (UseOld)
-                holder.Add((byte)header.Version);
-            else holder.Add((byte)ver);
+                writer.Write((byte)header.Version);
+            else writer.Write((byte)ver);
 
-            holder.AddRange(new byte[]
+            // Write the info how the file should be read/interpreted
+            writer.Write(new byte[]
             {
                 header.Format,
-                (byte)(header.IsLittleEndian ? 1 : 0),
+                (byte)(BitConverter.IsLittleEndian ? 1 : 0),
                 4, // sizeof(int)
                 (byte)(header.Is64Bit ? 8 : 4),
                 4, // Instruction size
                 8, // luaNumber size (double)
                 (byte)(header.IsIntegral ? 1 : 0)
             });
-
-            return holder.ToArray();
         }
 
-        private byte[] DumpInt(int i)
+        private void DumpCode(Function func, WriterOptions options)
         {
-            return DoEndian(BitConverter.GetBytes(i));
-        }
-        private byte[] DumpString(string str)
-        {
-            List<byte> holder = new List<byte>();
+            writer.Write(func.InstructionCount);
 
-            str = str.Replace("\0", "");
-
-            if (str.Length != 0)
-                str += "\0";
-
-            if (Is64)
-                holder.AddRange(DoEndian(BitConverter.GetBytes((long)str.Length)));
-            else holder.AddRange(DumpInt(str.Length));
-
-            holder.AddRange(Encoding.UTF8.GetBytes(str));
-
-            return holder.ToArray();
-        }
-        private byte[] DumpNumber(double number)
-        {
-            if (Is64)
-                return DoEndian(BitConverter.GetBytes(number));
-            else return DoEndian(BitConverter.GetBytes((float)number));
-        } 
-
-
-        private byte[] DumpFunction(Function func, WriterOptions options)
-        {
-            List<byte> holder = new List<byte>();
-
-            holder.AddRange(DumpString(func.FuncName));
-            holder.AddRange(DumpInt(func.LineDefined));
-            holder.AddRange(DumpInt(func.LastLineDefined));
-            holder.Add(func.nups);
-            holder.Add(func.numparams);
-            holder.Add(func.is_vararg);
-
-            if (options.KeepOldMaxStacksize)
-                holder.Add(func.maxstacksize);
-            else holder.Add(CalculateMaxStackSize(func));
-
-            holder.AddRange(DumpInt(func.InstructionCount));
             for (int i = 0; i < func.InstructionCount; i++)
-                holder.AddRange(func.Instructions[i].GetInstructionBytes());
+                writer.Write(func.Instructions[i].GetRawInstruction());
+        }
+        private void DumpConstants(Function func, WriterOptions options)
+        {
+            writer.Write(func.ConstantCount);
 
-            holder.AddRange(DumpInt(func.ConstantCount));
             for (int i = 0; i < func.ConstantCount; i++)
             {
-                Constant con = func.Constants[i];
+                Constant constant = func.Constants[i];
 
-                holder.Add((byte)con.Type);
+                writer.Write((byte)constant.Type);
 
-                switch (con.Type)
+                switch (constant.Type)
                 {
+                    case ConstantType.NIL:
+                        break;
                     case ConstantType.BOOLEAN:
-                        holder.Add((byte)(con.Value == true ? 1 : 0));
+                        writer.Write((bool)constant.Value);
                         break;
                     case ConstantType.NUMBER:
-                        holder.AddRange(DumpNumber(con.Value));
+                        if (Is64)
+                            writer.Write((double)constant.Value);
+                        else writer.Write((float)constant.Value);
                         break;
                     case ConstantType.STRING:
-                        holder.AddRange(DumpString(con.Value));
+                        writer.LWrite(constant.Value);
                         break;
                     default:
-                        throw new Exception($"This constant is not valid '{con.Type}'");
+                        throw new Exception($"Invalid constant type: '{constant.Type}', value: '{constant.Value}'");
                 }
             }
 
-            holder.AddRange(DumpInt(func.FunctionCount));
-            for (int i = 0; i < func.FunctionCount; i++)
-                holder.AddRange(DumpFunction(func.Functions[i], options));
+            // i wouldn't count this is constants but lua does (SubFunctions)
 
+            writer.Write(func.FunctionCount);
+
+            for (int i = 0; i < func.FunctionCount; i++)
+                DumpFunction(func.Functions[i], options);
+        }
+        private void DumpDebug(Function func, WriterOptions options)
+        {
+            // Dumping lineinfo
             if (func.lineinfo == null)
                 func.lineinfo = new int[0];
 
-            holder.AddRange(DumpInt(func.LineinfoSize));
-            for (int i = 0; i < func.LineinfoSize; i++)
-                holder.AddRange(DumpInt(func.lineinfo[i]));
+            writer.Write(func.LineinfoSize);
 
-            holder.AddRange(DumpInt(func.LocalCount));
+            for (int i = 0; i < func.LineinfoSize; i++)
+                writer.Write(func.lineinfo[i]);
+
+            // Dumping locals
+            writer.Write(func.LocalCount);
+
             for (int i = 0; i < func.LocalCount; i++)
             {
-                Local local = func.Locals[i];
+                Local l = func.Locals[i];
 
-                holder.AddRange(DumpString(local.Varname));
-                holder.AddRange(DumpInt(local.StartPC));
-                holder.AddRange(DumpInt(local.EndPC));
+                writer.LWrite(l.Varname);
+                writer.Write(l.StartPC);
+                writer.Write(l.EndPC);
             }
 
-            holder.AddRange(DumpInt(func.UpValueCount));
-            for (int i = 0; i < func.UpValueCount; i++)
-                holder.AddRange(DumpString(func.UpValues[i].Name));
+            // Dumping upvalues
+            writer.Write(func.UpValueCount);
 
-            return holder.ToArray();
+            for (int i = 0; i < func.UpValueCount; i++)
+                writer.LWrite(func.UpValues[i].Name);
+        }
+        private void DumpFunction(Function func, WriterOptions options)
+        {
+            // Write info about the function/chunk (this should be universal for every version of lua)
+            {
+                writer.LWrite(func.FuncName);
+                writer.Write(func.LineDefined);
+                writer.Write(func.LastLineDefined);
+                writer.Write(func.nups);
+                writer.Write(func.numparams);
+                writer.Write(func.is_vararg);
+
+                if (!options.KeepOldMaxStacksize)
+                    func.maxstacksize = CalculateMaxStackSize(func);
+
+                writer.Write(func.maxstacksize);
+            }
+
+            switch (options.NewLuaVersion)
+            {
+                case LuaVersion.LUA_VERSION_5_1:
+                    DumpCode(func, options); // Dump the code/instructions
+                    DumpConstants(func, options); // Dump the constants
+                    DumpDebug(func, options); // Dump debug info
+                    break;
+                default:
+                    throw new Exception($"Lua version {options.NewLuaVersion} is currently not supported");
+            }
         }
 
         internal LuaWriter(Chunk chunk, WriterOptions options)
         {
             #region Setting up variables
-            dataToWrite = new List<byte>();
+            writerOutput = new MemoryStream();
+            writer = new CustomWriter(writerOutput);
 
             Is64 = chunk.Header.Is64Bit;
             IsLittle = chunk.Header.IsLittleEndian;
+
+            writer.SetArch(Is64);
+
+            if (options.NewLuaVersion == LuaVersion.LUA_VERSION_UNKNOWN)
+                options.NewLuaVersion = chunk.Header.Version;
             #endregion
 
-            dataToWrite.AddRange(CreateHeader(chunk, options.KeepLuaVersion, options.NewLuaVersion)); // Add the header to the file
+            DumpHeader(chunk, options.KeepLuaVersion, options.NewLuaVersion); // Dump the header for the new file
 
             #region Name Checking
+            // Adding the @ to the start cause lua expects it (i think)
+
             string name = chunk.MainFunction.FuncName;
 
             if (string.IsNullOrEmpty(name))
@@ -182,12 +222,12 @@ namespace LuaLib.Lua.LuaHelpers
             chunk.MainFunction.FuncName = name;
             #endregion
 
-            dataToWrite.AddRange(DumpFunction(chunk.MainFunction, options)); // Write the Chunk + all the other things stored in the chunk
+            DumpFunction(chunk.MainFunction, options); // Write the Chunk + all the other things stored in the chunk
         }
 
         public void Write(string outfile)
         {
-            File.WriteAllBytes(outfile, dataToWrite.ToArray());
+            File.WriteAllBytes(outfile, writerOutput.ToArray());
         }
     }
 }

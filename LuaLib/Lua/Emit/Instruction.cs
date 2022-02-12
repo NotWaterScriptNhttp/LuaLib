@@ -136,7 +136,7 @@ namespace LuaLib.Lua.Emit
             UpdateRegisters(data);
         }
 
-        internal byte[] GetInstructionBytes()
+        internal uint GetRawInstruction()
         {
             uint inst = 0;
 
@@ -160,7 +160,7 @@ namespace LuaLib.Lua.Emit
             if (mapping.UsessBx)
                 inst = (uint)SetsBx(inst, (uint)sBx);
 
-            return BitConverter.GetBytes(inst);
+            return inst;
         }
 
         public override string ToString()

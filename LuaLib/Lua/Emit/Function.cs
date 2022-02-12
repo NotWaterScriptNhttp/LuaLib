@@ -108,6 +108,9 @@ namespace LuaLib.Lua.Emit
 
                     switch ((ConstantType)ttype)
                     {
+                        case ConstantType.NIL:
+                            consts.Add(new Constant(ConstantType.NIL, null));
+                            break;
                         case ConstantType.BOOLEAN:
                             consts.Add(new Constant(ConstantType.BOOLEAN, reader.ReadBoolean()));
                             break;

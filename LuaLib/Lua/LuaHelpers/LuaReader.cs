@@ -19,6 +19,13 @@ namespace LuaLib.Lua.LuaHelpers
             reader = new BinaryReader(new MemoryStream(File.ReadAllBytes(file)));
         }
 
+        public long GetPosition() => reader.BaseStream.Position;
+        public long GetLength() => reader.BaseStream.Length;
+        public bool IsFullyRead()
+        {
+            return reader.BaseStream.Position == reader.BaseStream.Length;
+        }
+
         public void UpdateEndian(bool IsLittle) => LittleEndian = IsLittle;
         public void UpdateArch(bool Is64) => Is64Arch = Is64; // the luac file can be compiled on a 32 bit compiler even though i highly doubt
 
@@ -80,7 +87,7 @@ namespace LuaLib.Lua.LuaHelpers
             else strLen = ReadNumber32();
 
             if (strLen == 0)
-                return "";
+                return null;
 
             string result = "";
 

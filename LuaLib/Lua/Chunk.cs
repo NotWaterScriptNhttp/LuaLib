@@ -23,7 +23,7 @@ namespace LuaLib.Lua
             return true;
         }
 
-        public static Chunk Load(string file)
+        public static Chunk Load(string file, bool ignoreReadError = false)
         {
             if (!File.Exists(file))
                 throw new Exception("File does not exist!");
@@ -41,6 +41,9 @@ namespace LuaLib.Lua
             lr.UpdateArch(chunk.Header.Is64Bit);
 
             chunk.MainFunction = Function.GetFunction(lr);
+
+            if (!lr.IsFullyRead() && !ignoreReadError)
+                throw new Exception($"The file {Path.GetFileName(file)} was not fully read!");
 
             return chunk;
         }
