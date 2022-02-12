@@ -2,6 +2,8 @@
 Lua binary chunk reader/writer library.
 Currently supports only lua 5.1.5 but more lua versions will be supported later.
 
+NOTE: using the LuaHelpers will add nothing. It is just for internal classes
+
 Loading a binary chunk
 ----------------------
 
