@@ -14,6 +14,9 @@ namespace LuaLib.Lua.Emit
         USERDATA = 7,
         THREAD = 8,
 
+        NUMBER_FLOAT = 3, // Lua 5.3
+        NUMBER_INT = 19, // Lua 5.3
+
         FALSE = 1, // Lua 5.4
         TRUE = 17 // Lua 5.4
     }

@@ -311,7 +311,6 @@ namespace LuaLib.Lua.Emit
                     }
                 }, // Lua5.4
             };
-
             private OpcodeMap() {}
 
             public static OpCodes GetOpcodeFromMap(LuaVersion version, int position)

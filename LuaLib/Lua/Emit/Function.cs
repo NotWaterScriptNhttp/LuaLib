@@ -208,7 +208,10 @@ namespace LuaLib.Lua.Emit
 
             function.LineDefined = reader.ReadNumber32();
             function.LastLineDefined = reader.ReadNumber32();
-            function.nups = reader.ReadByte();
+            
+            if (version == LuaVersion.LUA_VERSION_5_1)
+                function.nups = reader.ReadByte();
+
             function.numparams = reader.ReadByte();
             function.is_vararg = reader.ReadByte();
             function.maxstacksize = reader.ReadByte();
@@ -223,6 +226,9 @@ namespace LuaLib.Lua.Emit
 
             if (version >= LuaVersion.LUA_VERSION_5_3)
                 function.Functions = GetFunctions();
+
+            if (version == LuaVersion.LUA_VERSION_5_2)
+                function.FuncName = reader.ReadString();
 
             GetDebug(function);
 
