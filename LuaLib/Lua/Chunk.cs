@@ -34,13 +34,10 @@ namespace LuaLib.Lua
 
             chunk.Header = new LuaHeader(lr);
 
-            if (chunk.Header.Version != LuaVersion.LUA_VERSION_5_1)
-                throw new Exception($"Only 5.1 is supported at this moment");
-
             lr.UpdateEndian(chunk.Header.IsLittleEndian);
             lr.UpdateArch(chunk.Header.Is64Bit);
 
-            chunk.MainFunction = Function.GetFunction(lr);
+            chunk.MainFunction = Function.GetFunction(lr, chunk.Header.Version);
 
             if (!lr.IsFullyRead() && !ignoreReadError)
                 throw new Exception($"The file {Path.GetFileName(file)} was not fully read!");

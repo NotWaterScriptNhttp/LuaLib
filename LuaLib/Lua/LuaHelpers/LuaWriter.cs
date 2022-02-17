@@ -46,6 +46,34 @@ namespace LuaLib.Lua.LuaHelpers
         private bool Is64;
         private bool IsLittle;
 
+        private string ToBase16(int num)
+        {
+            const string Base = "0123456789ABCDEF";
+            string result = "";
+            while (num != 0)
+            {
+                result += Base[num % 16];
+                num /= 16;
+            }
+
+            if (result == "")
+                result = "00";
+
+            if (result.Length == 1)
+                result = "0" + result;
+
+            return result + " ";
+        }
+        private string BytesToString(byte[] bytes)
+        {
+            string outp = "";
+
+            for (int i = 0; i < bytes.Length; i++)
+                outp += ToBase16(bytes[i]);
+
+            return outp;
+        }
+
         //TODO: make this working
         private byte CalculateMaxStackSize(Function func)
         {
@@ -95,7 +123,10 @@ namespace LuaLib.Lua.LuaHelpers
             writer.Write(func.InstructionCount);
 
             for (int i = 0; i < func.InstructionCount; i++)
+            {
                 writer.Write(func.Instructions[i].GetRawInstruction());
+                Console.WriteLine($"[{i}]: {BytesToString(BitConverter.GetBytes(func.Instructions[i].GetRawInstruction()))}");
+            }
         }
         private void DumpConstants(Function func, WriterOptions options)
         {

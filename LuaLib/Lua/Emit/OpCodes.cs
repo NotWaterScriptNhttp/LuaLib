@@ -54,6 +54,82 @@
         CLOSE, // A         close all vars in the stack up to (>=) R(A)
         CLOSURE, // A Bx    R(A) := closure(KPROTO[Bx], R(A), ..., R(A + n))
 
-        VARARG // A B       R(A), R(A + 1), ..., R(A + B - 1) = vararg
+        VARARG, // A B       R(A), R(A + 1), ..., R(A + B - 1) = vararg
+
+        // Lua 5.2
+
+        LOADKX, // Ax
+
+        GETTABUP, // A B C
+        SETTABUP, // A B C
+
+        TFORCALL, // A C
+
+        EXTRAARG, // Ax
+
+        // Lua 5.3
+
+        IDIV, // A B C
+
+        BAND, // A B C
+        BOR, // A B C
+        BXOR, // A B C
+        SHL, // A B C
+        SHR, // A B C
+        BNOT, // A B
+
+        // Lua 5.4
+
+        LOADI, // A sBx
+        LOADF, // A sBx
+        LOADFALSE, // A
+        LFALSESKIP, // A
+        LOADTRUE, // A
+
+        GETI, // A B C
+        GETFIELD, // A B C
+
+        SETI, // A B C
+        SETFIELD, // A B C
+
+        ADDI, // A B C
+        ADDK, // A B C
+        SUBK, // A B C
+        MULK, // A B C
+        MODK, // A B C
+        POWK, // A B C
+        DIVK, // A B C
+        IDIVK, // A B C
+
+        BANDK, // A B C
+        BORK, // A B C
+        BXORK, // A B C
+
+        SHRI, // A B sC
+        SHLI, // A B sC
+
+        MMBIN, // A B C
+        MMBINI, // A sB C k
+        MMBINK, // A B C k
+
+        TBC, // A
+
+        EQK, // A B k
+        EQI, // A sB k
+        LTI, // A sB k
+        LEI, // A sB k
+        GTI, // A sB k
+        GEI, // A sB k
+
+        RETURN0, // Nothing
+        RETURN1, // A
+
+        TFORPREP, // A Bx
+
+        VARARGPREP, // A
+
+        // Custom opcodes
+
+        INVALID
     }
 }

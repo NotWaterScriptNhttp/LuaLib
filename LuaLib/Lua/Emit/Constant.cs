@@ -12,7 +12,10 @@ namespace LuaLib.Lua.Emit
         TABLE = 5,
         FUNCTION = 6,
         USERDATA = 7,
-        THREAD = 8
+        THREAD = 8,
+
+        FALSE = 1, // Lua 5.4
+        TRUE = 17 // Lua 5.4
     }
 
     public class Constant

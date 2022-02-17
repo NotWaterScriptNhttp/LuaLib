@@ -81,9 +81,9 @@ namespace LuaLib.Lua.Emit
 
         public string FuncName { get; internal set; } = "";
 
-        private Function() {}
+        internal Function() {}
 
-        internal static Function GetFunction(LuaReader reader)
+        internal static Function GetFunction(LuaReader reader, LuaVersion version)
         {
             List<Instruction> GetInstructions()
             {
@@ -92,7 +92,7 @@ namespace LuaLib.Lua.Emit
                 int instrCount = reader.ReadNumber32();
 
                 for (int i = 0; i < instrCount; i++)
-                    instrs.Add(new Instruction(reader.ReadUNumber32()));
+                    instrs.Add(new Instruction(reader.ReadUNumber32(), version));
 
                 return instrs;
             }
@@ -134,28 +134,52 @@ namespace LuaLib.Lua.Emit
                 int funcCount = reader.ReadNumber32();
 
                 for (int i = 0; i < funcCount; i++)
-                    functions.Add(GetFunction(reader));
+                    functions.Add(GetFunction(reader, version));
 
                 return functions;
+            }
+            List<UpValue> GetUpValues()
+            {
+                List<UpValue> upvalues = new List<UpValue>();
+
+                if (version == LuaVersion.LUA_VERSION_5_1)
+                    return new List<UpValue>();
+
+                int upCount = reader.ReadNumber32();
+
+                for (int i = 0; i < upCount; i++)
+                {
+                    UpValue upval = new UpValue();
+
+                    upval.InStack = reader.ReadByte();
+                    upval.Idx = reader.ReadByte();
+
+                    if (version >= LuaVersion.LUA_VERSION_5_4)
+                        upval.Kind = reader.ReadByte();
+
+                    upvalues.Add(upval);
+                }
+
+                return upvalues;
             }
             void GetDebug(Function func)
             {
                 // Not using reader.GetVector cause things will break very easily
 
-                int lineinfoSize = reader.ReadNumber32();
-
-                if (lineinfoSize != 0)
+                // lineinfo
                 {
+                    int lineinfoSize = reader.ReadNumber32();
+
                     func.lineinfo = new int[lineinfoSize];
 
                     for (int i = 0; i < lineinfoSize; i++)
                         func.lineinfo[i] = reader.ReadNumber32();
                 }
 
-                int localCount = reader.ReadNumber32();
-
-                if (localCount != 0)
+                // locals
                 {
+                    int localCount = reader.ReadNumber32();
+
                     for (int i = 0; i < localCount; i++)
                         func.Locals.Add(new Local
                         {
@@ -165,18 +189,23 @@ namespace LuaLib.Lua.Emit
                         });
                 }
 
-                int upvalueCount = reader.ReadNumber32();
-
-                if (upvalueCount != 0)
+                // upvalues
                 {
+                    int upvalueCount = reader.ReadNumber32();
+
+                    if (version == LuaVersion.LUA_VERSION_5_1)
+                        func.UpValues.AddRange(new UpValue[upvalueCount]);
+
                     for (int i = 0; i < upvalueCount; i++)
-                        func.UpValues.Add(new UpValue() { Name = reader.ReadString() });
+                        func.UpValues[i].Name = reader.ReadString();
                 }
             }
 
             Function function = new Function();
 
-            function.FuncName = reader.ReadString();
+            if (version != LuaVersion.LUA_VERSION_5_2)
+                function.FuncName = reader.ReadString();
+
             function.LineDefined = reader.ReadNumber32();
             function.LastLineDefined = reader.ReadNumber32();
             function.nups = reader.ReadByte();
@@ -186,7 +215,15 @@ namespace LuaLib.Lua.Emit
 
             function.Instructions = GetInstructions();
             function.Constants = GetConstants();
-            function.Functions = GetFunctions();
+            
+            if (version <= LuaVersion.LUA_VERSION_5_2)
+                function.Functions = GetFunctions();
+
+            function.UpValues = GetUpValues();
+
+            if (version >= LuaVersion.LUA_VERSION_5_3)
+                function.Functions = GetFunctions();
+
             GetDebug(function);
 
             return function;
