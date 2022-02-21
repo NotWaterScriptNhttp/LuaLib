@@ -8,7 +8,7 @@ namespace LuaLib.Lua.LuaHelpers
 {
     public class LuaHeader
     {
-        internal void CheckTail(BinaryReader br)
+        internal void CheckTail(CustomBinaryReader br)
         {
             byte[] LuaTail = new byte[6]
             {
@@ -37,7 +37,7 @@ namespace LuaLib.Lua.LuaHelpers
 
         internal LuaHeader() {}
 
-        internal static LuaHeader GetHeader(BinaryReader br)
+        internal static LuaHeader GetHeader(CustomBinaryReader br)
         {
             byte[] FileSig = new byte[4]
             {

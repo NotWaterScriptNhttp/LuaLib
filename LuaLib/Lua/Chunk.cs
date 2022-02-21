@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.ComponentModel;
 
 using LuaLib.Lua.Emit;
 using LuaLib.Lua.LuaHelpers;
@@ -33,7 +32,7 @@ namespace LuaLib.Lua
 
             Chunk chunk = new Chunk();
 
-            BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(file)));
+            CustomBinaryReader br = new CustomBinaryReader(new MemoryStream(File.ReadAllBytes(file)));
 
             LuaHeader header = LuaHeader.GetHeader(br);
             chunk.Header = header;

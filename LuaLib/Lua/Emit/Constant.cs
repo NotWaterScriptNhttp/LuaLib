@@ -20,6 +20,9 @@ namespace LuaLib.Lua.Emit
         LNGSTR = 20,
         #endregion
         #region Lua 5.4 (Not as useless as the above)
+        INT54 = 3,
+        NUMBER54 = 19,
+
         FALSE = 1,
         TRUE = 17,
         #endregion

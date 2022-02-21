@@ -5,7 +5,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaHeader
 {
     internal class LuaHeader52 : LuaHelpers.LuaHeader
     {
-        internal LuaHeader52(BinaryReader br)
+        internal LuaHeader52(CustomBinaryReader br)
         {
             IsLittleEndian = br.ReadBoolean();
 

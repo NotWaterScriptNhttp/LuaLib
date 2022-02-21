@@ -5,7 +5,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaReader
 {
     internal class LuaReader53 : LuaHelpers.LuaReader
     {
-        public LuaReader53(BinaryReader br) : base(br) {}
+        public LuaReader53(CustomBinaryReader br) : base(br) {}
         public LuaReader53(MemoryStream ms) : base(ms) {}
         public LuaReader53(string file) : base(file) {}
 

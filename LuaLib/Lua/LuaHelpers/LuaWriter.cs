@@ -173,12 +173,7 @@ namespace LuaLib.Lua.LuaHelpers
             writer.Write(func.LineinfoSize);
 
             for (int i = 0; i < func.LineinfoSize; i++)
-            {
-                if ((options.KeepLuaVersion && oldVer == LuaVersion.LUA_VERSION_5_4) || (!options.KeepLuaVersion && options.NewLuaVersion == LuaVersion.LUA_VERSION_5_4))
-                    writer.Write(func.Lineinfo[i].pc);
-
-                writer.Write(func.Lineinfo[i].line);
-            }
+                writer.Write(func.lineinfo[i]);
 
             // Dumping locals
             writer.Write(func.LocalCount);

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LuaLib.Lua.Emit
 {
-    public class LineInfo
+    public class AbsLineInfo
     {
         public int line;
         public int pc;

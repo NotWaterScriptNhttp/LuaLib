@@ -3,6 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 
 using LuaLib.Lua.LuaHelpers;
+using LuaLib.Lua.LuaHelpers.Versions.Function;
 
 namespace LuaLib.Lua.Emit
 {
@@ -22,7 +23,9 @@ namespace LuaLib.Lua.Emit
 
         public List<Local> Locals = new List<Local>();
         public List<UpValue> UpValues = new List<UpValue>();
-        public List<LineInfo> Lineinfo = new List<LineInfo>();
+        public List<AbsLineInfo> AbsLineinfo = new List<AbsLineInfo>();
+
+        public int[] lineinfo;
 
 
         public int ConstantCount
@@ -60,14 +63,22 @@ namespace LuaLib.Lua.Emit
                 return UpValues.Count;
             }
         }
+        public int AbsLineinfoCount
+        {
+            get
+            {
+                return AbsLineinfo.Count;
+            }
+        }
         public int LineinfoSize
         {
             get
             {
-                return Lineinfo.Count;
+                return lineinfo.Length;
             }
         }
 
+        public bool IsMainChunk { get; internal set; }
         public bool IsMainChunkChild { get; private set; }
 
         public int LineDefined;
@@ -94,48 +105,6 @@ namespace LuaLib.Lua.Emit
                     instrs.Add(new Instruction(reader.ReadUNumber32(), version));
 
                 return instrs;
-            }
-            List<Constant> GetConstants()
-            {
-                List<Constant> consts = new List<Constant>();
-
-                int constCount = reader.ReadNumber32();
-
-                for (int i = 0; i< constCount; i++)
-                {
-                    byte ttype = reader.ReadByte();
-
-                    switch ((ConstantType)ttype)
-                    {
-                        case ConstantType.NIL:
-                            consts.Add(new Constant(ConstantType.NIL, null));
-                            break;
-                        case ConstantType.BOOLEAN:
-                            if (version >= LuaVersion.LUA_VERSION_5_4)
-                                consts.Add(new Constant(ConstantType.FALSE, false));
-                            else consts.Add(new Constant(ConstantType.BOOLEAN, reader.ReadBoolean()));
-                            break;
-                        case ConstantType.TRUE:
-                            consts.Add(new Constant(ConstantType.TRUE, true));
-                            break;
-                        case ConstantType.NUMBER:
-                            consts.Add(new Constant(ConstantType.NUMBER, reader.ReadFloat()));
-                            break;
-                        case ConstantType.NUMBER_INT:
-                            consts.Add(new Constant(ConstantType.NUMBER, reader.ReadNumber64()));
-                            break;
-                        case ConstantType.STRING:
-                            consts.Add(new Constant(ConstantType.STRING, reader.ReadString()));
-                            break;
-                        case ConstantType.LNGSTR:
-                            consts.Add(new Constant(ConstantType.STRING, reader.ReadString()));
-                            break;
-                        default:
-                            throw new Exception($"This constant is not valid '{ttype} -> ({(ConstantType)ttype})'");
-                    }
-                }
-
-                return consts;
             }
             List<Function> GetFunctions()
             {
@@ -172,51 +141,23 @@ namespace LuaLib.Lua.Emit
 
                 return upvalues;
             }
-            void GetDebug(Function func)
-            {
-                // Not using reader.GetVector cause things will break very easily
-
-                // lineinfo
-                {
-                    int lineinfoSize = reader.ReadNumber32();
-
-                    for (int i = 0; i < lineinfoSize; i++)
-                    {
-                        LineInfo li = new LineInfo();
-
-                        if (version >= LuaVersion.LUA_VERSION_5_4)
-                            li.pc = reader.ReadNumber32();
-
-                        li.line = reader.ReadNumber32();
-                    }
-                }
-
-                // locals
-                {
-                    int localCount = reader.ReadNumber32();
-
-                    for (int i = 0; i < localCount; i++)
-                        func.Locals.Add(new Local
-                        {
-                            Varname = reader.ReadString(),
-                            StartPC = reader.ReadNumber32(),
-                            EndPC = reader.ReadNumber32()
-                        });
-                }
-
-                // upvalues
-                {
-                    int upvalueCount = reader.ReadNumber32();
-
-                    if (version == LuaVersion.LUA_VERSION_5_1)
-                        func.UpValues.AddRange(new UpValue[upvalueCount]);
-
-                    for (int i = 0; i < upvalueCount; i++)
-                        func.UpValues[i].Name = reader.ReadString();
-                }
-            }
 
             Function function = new Function();
+            FunctionParser parser = null;
+
+            switch (version)
+            {
+                case LuaVersion.LUA_VERSION_5_1:
+                case LuaVersion.LUA_VERSION_5_2:
+                case LuaVersion.LUA_VERSION_5_3:
+                    parser = new Function51_53(reader);
+                    break;
+                case LuaVersion.LUA_VERSION_5_4:
+                    parser = new Function54(reader);
+                    break;
+                default:
+                    throw new Exception($"No function parser for ({version})");
+            }
 
             if (version != LuaVersion.LUA_VERSION_5_2)
                 function.FuncName = reader.ReadString();
@@ -232,7 +173,7 @@ namespace LuaLib.Lua.Emit
             function.maxstacksize = reader.ReadByte();
 
             function.Instructions = GetInstructions();
-            function.Constants = GetConstants();
+            function.Constants = parser.GetConstants();
             
             if (version <= LuaVersion.LUA_VERSION_5_2)
                 function.Functions = GetFunctions();
@@ -245,7 +186,7 @@ namespace LuaLib.Lua.Emit
             if (version == LuaVersion.LUA_VERSION_5_2)
                 function.FuncName = reader.ReadString();
 
-            GetDebug(function);
+            parser.GetDebug(function);
 
             return function;
         }

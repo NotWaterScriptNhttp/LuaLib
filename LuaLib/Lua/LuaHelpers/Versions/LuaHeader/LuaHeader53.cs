@@ -5,7 +5,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaHeader
 {
     internal class LuaHeader53 : LuaHelpers.LuaHeader
     {
-        internal LuaHeader53(BinaryReader br)
+        internal LuaHeader53(CustomBinaryReader br)
         {
             CheckTail(br);
 
