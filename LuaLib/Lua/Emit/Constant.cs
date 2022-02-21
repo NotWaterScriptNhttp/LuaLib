@@ -15,10 +15,8 @@ namespace LuaLib.Lua.Emit
         THREAD = 8,
 
         #region Lua 5.3 (Totally useless constant types)
-        NUMBER_FLOAT = 3, // Never used in this source
         NUMBER_INT = 19,
 
-        SHRSTR = 4, // Never used in this source
         LNGSTR = 20,
         #endregion
         #region Lua 5.4 (Not as useless as the above)

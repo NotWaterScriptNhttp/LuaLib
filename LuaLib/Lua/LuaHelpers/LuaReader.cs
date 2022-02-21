@@ -68,6 +68,22 @@ namespace LuaLib.Lua.LuaHelpers
             return BitConverter.ToUInt64(ReadBytes(8), 0);
         }
 
+        // This function is stollen straight from source https://www.lua.org/source/5.4/lundump.c.html#loadUnsigned
+        public ulong ReadSize()
+        {
+            ulong x = 0;
+            int b;
+
+            do
+            {
+                b = ReadByte();
+
+                x = (x << 7) | (ulong)(b & 0x7f);
+            } while ((b & 0x80) == 0);
+
+            return x;
+        }
+
         public double ReadFloat()
         {
             if (Is64Arch)

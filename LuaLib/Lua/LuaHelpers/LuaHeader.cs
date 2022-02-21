@@ -69,6 +69,9 @@ namespace LuaLib.Lua.LuaHelpers
                 case LuaVersion.LUA_VERSION_5_3:
                     header = new LuaHeader53(br);
                     break;
+                case LuaVersion.LUA_VERSION_5_4:
+                    header = new LuaHeader54(br);
+                    break;
                 default:
                     throw new Exception($"Cannot create a header for ({version})");
             }
@@ -77,7 +80,6 @@ namespace LuaLib.Lua.LuaHelpers
             header.Format = format;
 
             return header;
-           
         }
 
         public override string ToString()

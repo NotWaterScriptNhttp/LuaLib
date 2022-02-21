@@ -51,6 +51,9 @@ namespace LuaLib.Lua
                 case LuaVersion.LUA_VERSION_5_3:
                     lr = new LuaReader53(br);
                     break;
+                case LuaVersion.LUA_VERSION_5_4:
+                    lr = new LuaReader54(br);
+                    break;
                 default:
                     throw new Exception($"No reader for {header.Version}");
             }
