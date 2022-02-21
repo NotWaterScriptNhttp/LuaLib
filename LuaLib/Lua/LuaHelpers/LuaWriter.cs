@@ -45,6 +45,7 @@ namespace LuaLib.Lua.LuaHelpers
         private CustomWriter writer;
         private bool Is64;
         private bool IsLittle;
+        private LuaVersion oldVer;
 
         private string ToBase16(int num)
         {
@@ -168,13 +169,16 @@ namespace LuaLib.Lua.LuaHelpers
         private void DumpDebug(Function func, WriterOptions options)
         {
             // Dumping lineinfo
-            if (func.lineinfo == null)
-                func.lineinfo = new int[0];
 
             writer.Write(func.LineinfoSize);
 
             for (int i = 0; i < func.LineinfoSize; i++)
-                writer.Write(func.lineinfo[i]);
+            {
+                if ((options.KeepLuaVersion && oldVer == LuaVersion.LUA_VERSION_5_4) || (!options.KeepLuaVersion && options.NewLuaVersion == LuaVersion.LUA_VERSION_5_4))
+                    writer.Write(func.Lineinfo[i].pc);
+
+                writer.Write(func.Lineinfo[i].line);
+            }
 
             // Dumping locals
             writer.Write(func.LocalCount);
@@ -236,6 +240,8 @@ namespace LuaLib.Lua.LuaHelpers
 
             if (options.NewLuaVersion == LuaVersion.LUA_VERSION_UNKNOWN)
                 options.NewLuaVersion = chunk.Header.Version;
+
+            oldVer = chunk.Header.Version;
             #endregion
 
             DumpHeader(chunk, options.KeepLuaVersion, options.NewLuaVersion); // Dump the header for the new file

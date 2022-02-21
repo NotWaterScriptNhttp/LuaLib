@@ -14,11 +14,17 @@ namespace LuaLib.Lua.Emit
         USERDATA = 7,
         THREAD = 8,
 
-        NUMBER_FLOAT = 3, // Lua 5.3
-        NUMBER_INT = 19, // Lua 5.3
+        #region Lua 5.3 (Totally useless constant types)
+        NUMBER_FLOAT = 3, // Never used in this source
+        NUMBER_INT = 19,
 
-        FALSE = 1, // Lua 5.4
-        TRUE = 17 // Lua 5.4
+        SHRSTR = 4, // Never used in this source
+        LNGSTR = 20,
+        #endregion
+        #region Lua 5.4 (Not as useless as the above)
+        FALSE = 1,
+        TRUE = 17,
+        #endregion
     }
 
     public class Constant

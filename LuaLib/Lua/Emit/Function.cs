@@ -22,6 +22,7 @@ namespace LuaLib.Lua.Emit
 
         public List<Local> Locals = new List<Local>();
         public List<UpValue> UpValues = new List<UpValue>();
+        public List<LineInfo> Lineinfo = new List<LineInfo>();
 
 
         public int ConstantCount
@@ -63,7 +64,7 @@ namespace LuaLib.Lua.Emit
         {
             get
             {
-                return lineinfo.Length;
+                return Lineinfo.Count;
             }
         }
 
@@ -76,8 +77,6 @@ namespace LuaLib.Lua.Emit
         public byte numparams;
         public byte is_vararg;
         public byte maxstacksize;
-
-        public int[] lineinfo;
 
         public string FuncName { get; internal set; } = "";
 
@@ -112,12 +111,23 @@ namespace LuaLib.Lua.Emit
                             consts.Add(new Constant(ConstantType.NIL, null));
                             break;
                         case ConstantType.BOOLEAN:
-                            consts.Add(new Constant(ConstantType.BOOLEAN, reader.ReadBoolean()));
+                            if (version >= LuaVersion.LUA_VERSION_5_4)
+                                consts.Add(new Constant(ConstantType.FALSE, false));
+                            else consts.Add(new Constant(ConstantType.BOOLEAN, reader.ReadBoolean()));
+                            break;
+                        case ConstantType.TRUE:
+                            consts.Add(new Constant(ConstantType.TRUE, true));
                             break;
                         case ConstantType.NUMBER:
                             consts.Add(new Constant(ConstantType.NUMBER, reader.ReadFloat()));
                             break;
+                        case ConstantType.NUMBER_INT:
+                            consts.Add(new Constant(ConstantType.NUMBER, reader.ReadNumber64()));
+                            break;
                         case ConstantType.STRING:
+                            consts.Add(new Constant(ConstantType.STRING, reader.ReadString()));
+                            break;
+                        case ConstantType.LNGSTR:
                             consts.Add(new Constant(ConstantType.STRING, reader.ReadString()));
                             break;
                         default:
@@ -170,10 +180,15 @@ namespace LuaLib.Lua.Emit
                 {
                     int lineinfoSize = reader.ReadNumber32();
 
-                    func.lineinfo = new int[lineinfoSize];
-
                     for (int i = 0; i < lineinfoSize; i++)
-                        func.lineinfo[i] = reader.ReadNumber32();
+                    {
+                        LineInfo li = new LineInfo();
+
+                        if (version >= LuaVersion.LUA_VERSION_5_4)
+                            li.pc = reader.ReadNumber32();
+
+                        li.line = reader.ReadNumber32();
+                    }
                 }
 
                 // locals

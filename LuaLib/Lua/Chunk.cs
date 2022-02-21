@@ -1,8 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.ComponentModel;
 
 using LuaLib.Lua.Emit;
 using LuaLib.Lua.LuaHelpers;
+
+using LuaLib.Lua.LuaHelpers.Versions.LuaReader;
 
 namespace LuaLib.Lua
 {
@@ -28,16 +31,37 @@ namespace LuaLib.Lua
             if (!File.Exists(file))
                 throw new Exception("File does not exist!");
 
-            LuaReader lr = new LuaReader(file);
-
             Chunk chunk = new Chunk();
 
-            chunk.Header = new LuaHeader(lr);
+            BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(file)));
 
-            lr.UpdateEndian(chunk.Header.IsLittleEndian);
-            lr.UpdateArch(chunk.Header.Is64Bit);
+            LuaHeader header = LuaHeader.GetHeader(br);
+            chunk.Header = header;
 
-            chunk.MainFunction = Function.GetFunction(lr, chunk.Header.Version);
+            LuaReader lr = null;
+
+            switch (header.Version)
+            {
+                case LuaVersion.LUA_VERSION_5_1:
+                    lr = new LuaReader51(br);
+                    break;
+                case LuaVersion.LUA_VERSION_5_2:
+                    lr = new LuaReader52(br);
+                    break;
+                case LuaVersion.LUA_VERSION_5_3:
+                    lr = new LuaReader53(br);
+                    break;
+                default:
+                    throw new Exception($"No reader for {header.Version}");
+            }
+
+            if (header.Version >= LuaVersion.LUA_VERSION_5_3)
+                lr.ReadByte(); // UpvalueCount 
+
+            lr.UpdateEndian(header.IsLittleEndian);
+            lr.UpdateArch(header.Is64Bit);
+
+            chunk.MainFunction = Function.GetFunction(lr, header.Version);
 
             if (!lr.IsFullyRead() && !ignoreReadError)
                 throw new Exception($"The file {Path.GetFileName(file)} was not fully read!");

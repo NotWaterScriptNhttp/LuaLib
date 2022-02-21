@@ -311,6 +311,13 @@ namespace LuaLib.Lua.Emit
                     }
                 }, // Lua5.4
             };
+
+            static OpcodeMap()
+            {
+                OpCodes[] opcodes = Map[LuaVersion.LUA_VERSION_5_3];
+                Console.WriteLine($"Opcodes: {opcodes.Length}");
+            }
+
             private OpcodeMap() {}
 
             public static OpCodes GetOpcodeFromMap(LuaVersion version, int position)
@@ -973,9 +980,383 @@ namespace LuaLib.Lua.Emit
                     LuaVersion.LUA_VERSION_5_3,
                     new Registers[]
                     {
+                        new Registers
+                        {
+                            opcode = OpCodes.MOVE,
 
+                            A = true,
+                            B = true
+                        }, // MOVE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.LOADK,
+
+                            A = true,
+                            Bx = true
+                        }, // LOADK
+                        new Registers
+                        {
+                            opcode = OpCodes.LOADKX,
+
+                            A = true
+                        }, // LOADKX
+                        new Registers
+                        {
+                            opcode = OpCodes.LOADBOOL,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // LOADBOOL
+                        new Registers
+                        {
+                            opcode = OpCodes.LOADNIL,
+
+                            A = true,
+                            B = true
+                        }, // LOADNIL
+
+                        new Registers
+                        {
+                            opcode = OpCodes.GETUPVAL,
+
+                            A = true,
+                            B = true
+                        }, // GETUPVAL
+                        new Registers
+                        {
+                            opcode = OpCodes.GETTABUP,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // GETTABUP
+                        new Registers
+                        {
+                            opcode = OpCodes.GETTABLE,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // GETTABLE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.SETTABUP,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SETTABUP
+                        new Registers
+                        {
+                            opcode = OpCodes.SETUPVAL,
+
+                            A = true,
+                            B = true
+                        }, // SETUPVAL
+                        new Registers
+                        {
+                            opcode = OpCodes.SETTABLE,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SETTABLE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.NEWTABLE,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // NEWTABLE
+                        new Registers
+                        {
+                            opcode = OpCodes.SELF,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SELF
+
+                        new Registers
+                        {
+                            opcode = OpCodes.ADD,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // ADD
+                        new Registers
+                        {
+                            opcode = OpCodes.SUB,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SUB
+                        new Registers
+                        {
+                            opcode = OpCodes.MUL,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // MUL
+                        new Registers
+                        {
+                            opcode = OpCodes.MOD,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // MOD
+                        new Registers
+                        {
+                            opcode = OpCodes.POW,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // POW
+                        new Registers
+                        {
+                            opcode = OpCodes.DIV,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // DIV
+                        new Registers
+                        {
+                            opcode = OpCodes.IDIV,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // IDIV
+                        new Registers
+                        {
+                            opcode = OpCodes.BAND,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // BAND
+                        new Registers
+                        {
+                            opcode = OpCodes.BOR,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // BOR
+                        new Registers
+                        {
+                            opcode = OpCodes.BXOR,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // BXOR
+                        new Registers
+                        {
+                            opcode = OpCodes.SHL,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SHL
+                        new Registers
+                        {
+                            opcode = OpCodes.SHR,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SHR
+                        new Registers
+                        {
+                            opcode = OpCodes.UNM,
+
+                            A = true,
+                            B = true
+                        }, // UNM
+                        new Registers
+                        {
+                            opcode = OpCodes.BNOT,
+
+                            A = true,
+                            B = true
+                        }, // BNOT
+                        new Registers
+                        {
+                            opcode = OpCodes.NOT,
+
+                            A = true,
+                            B = true
+                        }, // NOT
+                        new Registers
+                        {
+                            opcode = OpCodes.LEN,
+
+                            A = true,
+                            B = true
+                        }, // LEN
+
+                        new Registers
+                        {
+                            opcode = OpCodes.CONCAT,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // CONCAT
+
+                        new Registers
+                        {
+                            opcode = OpCodes.JMP,
+
+                            A = true,
+                            sBx = true
+                        }, // JMP
+
+                        new Registers
+                        {
+                            opcode = OpCodes.EQ,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // EQ
+                        new Registers
+                        {
+                            opcode = OpCodes.LT,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // LT
+                        new Registers
+                        {
+                            opcode = OpCodes.LE,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // LE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.TEST,
+
+                            A = true,
+                            C = true
+                        }, // TEST
+                        new Registers
+                        {
+                            opcode = OpCodes.TESTSET,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // TESTSET
+
+                        new Registers
+                        {
+                            opcode = OpCodes.CALL,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // CALL
+                        new Registers
+                        {
+                            opcode = OpCodes.TAILCALL,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // TAILCALL
+                        new Registers
+                        {
+                            opcode = OpCodes.RETURN,
+
+                            A = true,
+                            B = true
+                        }, // RETURN
+
+                        new Registers
+                        {
+                            opcode = OpCodes.FORLOOP,
+
+                            A = true,
+                            sBx = true
+                        }, // FORLOOP
+                        new Registers
+                        {
+                            opcode = OpCodes.FORPREP,
+
+                            A = true,
+                            sBx = true
+                        }, // FORPREP
+                        new Registers
+                        {
+                            opcode = OpCodes.TFORCALL,
+
+                            A = true,
+                            C = true
+                        }, // TFORCALL
+                        new Registers
+                        {
+                            opcode = OpCodes.TFORLOOP,
+
+                            A = true,
+                            sBx = true
+                        }, // TFORLOOP
+
+                        new Registers
+                        {
+                            opcode = OpCodes.SETLIST,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SETLIST
+
+                        new Registers
+                        {
+                            opcode = OpCodes.CLOSURE,
+
+                            A = true,
+                            Bx = true
+                        }, // CLOSURE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.VARARG,
+
+                            A = true,
+                            B = true
+                        }, // VARARG
+                        new Registers
+                        {
+                            opcode = OpCodes.EXTRAARG,
+
+                            Ax = true
+                        }, // EXTRAARG
                     }
                 }, // Lua5.3
+                {
+                    LuaVersion.LUA_VERSION_5_4,
+                    new Registers[]
+                    {
+
+                    }
+                }, // Lua5.4
             };
 
             public static Registers GetRegister(LuaVersion version, OpCodes opcode, bool throwError = true)

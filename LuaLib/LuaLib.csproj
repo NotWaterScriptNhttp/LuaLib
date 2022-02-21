@@ -53,10 +53,18 @@
     <Compile Include="Lua\LuaHelpers\LuaHeader.cs" />
     <Compile Include="Lua\LuaHelpers\LuaReader.cs" />
     <Compile Include="Lua\LuaHelpers\LuaWriter.cs" />
+    <Compile Include="Lua\LuaHelpers\Versions\LuaHeader\LuaHeader52.cs" />
+    <Compile Include="Lua\LuaHelpers\Versions\LuaHeader\LuaHeader51.cs" />
+    <Compile Include="Lua\LuaHelpers\Versions\LuaHeader\LuaHeader53.cs" />
+    <Compile Include="Lua\LuaHelpers\Versions\LuaReader\LuaReader52.cs" />
+    <Compile Include="Lua\LuaHelpers\Versions\LuaReader\LuaReader51.cs" />
+    <Compile Include="Lua\LuaHelpers\Versions\LuaReader\LuaReader53.cs" />
     <Compile Include="Lua\LuaVersion.cs" />
     <Compile Include="Lua\WriterOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Lua\LuaHelpers\Versions\LuaWriter\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

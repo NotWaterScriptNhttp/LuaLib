@@ -4,12 +4,13 @@ using System.Linq;
 
 namespace LuaLib.Lua.LuaHelpers
 {
-    internal class LuaReader
+    internal abstract class LuaReader
     {
-        private BinaryReader reader;
-        private bool LittleEndian = true;
-        private bool Is64Arch = true;
+        protected BinaryReader reader;
+        protected bool LittleEndian = true;
+        protected bool Is64Arch = true;
 
+        internal LuaReader(BinaryReader br) => reader = br;
         internal LuaReader(MemoryStream ms) => reader = new BinaryReader(ms);
         internal LuaReader(string file)
         {
@@ -78,22 +79,6 @@ namespace LuaLib.Lua.LuaHelpers
         {
             return ReadByte() == 0 ? false : true;
         }
-        public string ReadString()
-        {
-            int strLen;
-
-            if (Is64Arch)
-                strLen = (int)ReadNumber64();
-            else strLen = ReadNumber32();
-
-            if (strLen == 0)
-                return null;
-
-            string result = "";
-
-            ReadBytes(strLen).ToList().ForEach(b => result += (char)b);
-
-            return result.Replace("\0", "");
-        }
+        public abstract string ReadString();
     }
 }
