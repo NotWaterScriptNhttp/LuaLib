@@ -19,9 +19,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaHeader
             if (br.ReadInt64() != LUA_INT)
                 throw new Exception("Header int does not match");
 
-            double db = br.ReadDouble();
-
-            if (db != LUA_NUM)
+            if (br.ReadDouble() != LUA_NUM)
                 throw new Exception("Header number does not match");
         }
     }
