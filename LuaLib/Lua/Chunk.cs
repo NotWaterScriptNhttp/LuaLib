@@ -20,7 +20,7 @@ namespace LuaLib.Lua
             if (options == null)
                 options = new WriterOptions();
 
-            new LuaWriter(this, options).Write(out_file);
+            LuaWriter.GetWriter(this, options).Write(out_file);
 
             return true;
         }
@@ -64,6 +64,10 @@ namespace LuaLib.Lua
             lr.UpdateArch(header.Is64Bit);
 
             chunk.MainFunction = Function.GetFunction(lr, header.Version);
+            chunk.MainFunction.IsMainChunk = true;
+
+            for (int i = 0; i < chunk.MainFunction.FunctionCount; i++)
+                chunk.MainFunction.Functions[i].IsMainChunkChild = true;
 
             if (!lr.IsFullyRead() && !ignoreReadError)
                 throw new Exception($"The file {Path.GetFileName(file)} was not fully read!");

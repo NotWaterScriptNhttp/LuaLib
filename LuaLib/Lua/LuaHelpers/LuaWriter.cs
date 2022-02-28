@@ -7,239 +7,108 @@ using System.Threading.Tasks;
 
 using LuaLib.Lua.Emit;
 using LuaLib.Lua.LuaHelpers;
+using LuaLib.Lua.LuaHelpers.Versions.LuaWriter;
 
 namespace LuaLib.Lua.LuaHelpers
 {
-    internal class LuaWriter
+    internal abstract class LuaWriter
     {
-        private class CustomWriter : BinaryWriter
-        {
-            private bool Is64Bit = true;
-
-            public CustomWriter(Stream output) : base(output) {}
-
-            public void SetArch(bool is64) => Is64Bit = is64;
-
-            public void LWrite(string data)
-            {
-                if (data == null)
-                {
-                    if (Is64Bit)
-                        Write((long)0);
-                    else Write(0);
-                    return;
-                }
-
-                if (!data.EndsWith("\0"))
-                    data += '\0';
-
-                if (Is64Bit)
-                    Write((long)data.Length);
-                else Write(data.Length);
-
-                Write(Encoding.UTF8.GetBytes(data));
-            }
-        }
-
         private MemoryStream writerOutput;
-        private CustomWriter writer;
-        private bool Is64;
-        private bool IsLittle;
-        private LuaVersion oldVer;
+        protected bool Is64Bit;
+        protected bool IsLittle;
+        protected BinaryWriter writer;
 
-        private string ToBase16(int num)
+        protected readonly byte[] LuaSig = new byte[4]
         {
-            const string Base = "0123456789ABCDEF";
-            string result = "";
-            while (num != 0)
-            {
-                result += Base[num % 16];
-                num /= 16;
-            }
-
-            if (result == "")
-                result = "00";
-
-            if (result.Length == 1)
-                result = "0" + result;
-
-            return result + " ";
-        }
-        private string BytesToString(byte[] bytes)
-        {
-            string outp = "";
-
-            for (int i = 0; i < bytes.Length; i++)
-                outp += ToBase16(bytes[i]);
-
-            return outp;
-        }
+            0x1B,
+            0x4C,
+            0x75,
+            0x61
+        };
 
         //TODO: make this working
-        private byte CalculateMaxStackSize(Function func)
+        protected byte CalculateMaxStackSize(Function func)
         {
             return func.maxstacksize;
         }
-        private byte[] DoEndian(byte[] data)
+        protected byte[] DoEndian(byte[] data)
         {
             if (!IsLittle && BitConverter.IsLittleEndian)
+                Array.Reverse(data);
+            else if (IsLittle && !BitConverter.IsLittleEndian)
                 Array.Reverse(data);
 
             return data;
         }
 
-        private void DumpHeader(Chunk c, bool UseOld, LuaVersion ver)
+        virtual protected void DumpSize(ulong size)
         {
-            // Write the luac file sig
-            writer.Write(new byte[4]
+            int dibs = ((Is64Bit ? 8 : 4) * 8 / 7) + 1;
+
+            byte[] buff = new byte[dibs];
+            int n = 0;
+
+            do
             {
-                0x1B,
-                0x4C,
-                0x75,
-                0x61
-            });
+                buff[dibs - (++n)] = (byte)(size & 0x7f);
+                size >>= 7;
+            } while (size != 0);
+            buff[dibs - 1] |= 0x80;
 
-            LuaHeader header = c.Header;
-
-            // Write the lua version the file is using
-            if (UseOld)
-                writer.Write((byte)header.Version);
-            else writer.Write((byte)ver);
-
-            // Write the info how the file should be read/interpreted
-            writer.Write(new byte[]
-            {
-                header.Format,
-                (byte)(BitConverter.IsLittleEndian ? 1 : 0),
-                4, // sizeof(int)
-                (byte)(header.Is64Bit ? 8 : 4),
-                4, // Instruction size
-                8, // luaNumber size (double)
-                (byte)(header.IsIntegral ? 1 : 0)
-            });
+            for (int i = 0;i < n; i++)
+                writer.Write(buff[i + dibs - n]);
         }
+        virtual protected void DumpInt(int i32) => writer.Write(DoEndian(BitConverter.GetBytes(i32)));
+        protected void DumpInt64(long i64) => writer.Write(DoEndian(BitConverter.GetBytes(i64)));
+        protected void DumpBool(bool b) => writer.Write(b);
 
-        private void DumpCode(Function func, WriterOptions options)
-        {
-            writer.Write(func.InstructionCount);
+        internal abstract void DumpString(string str);
 
-            for (int i = 0; i < func.InstructionCount; i++)
-            {
-                writer.Write(func.Instructions[i].GetRawInstruction());
-                Console.WriteLine($"[{i}]: {BytesToString(BitConverter.GetBytes(func.Instructions[i].GetRawInstruction()))}");
-            }
-        }
-        private void DumpConstants(Function func, WriterOptions options)
-        {
-            writer.Write(func.ConstantCount);
+        internal abstract void DumpHeader(Chunk chunk);
 
-            for (int i = 0; i < func.ConstantCount; i++)
-            {
-                Constant constant = func.Constants[i];
+        internal abstract void DumpCode(Function func, WriterOptions options);
+        internal abstract void DumpConstants(Function func, WriterOptions options);
+        internal abstract void DumpDebug(Function func, WriterOptions options);
+        internal abstract void DumpFunction(Function func, WriterOptions options);
 
-                writer.Write((byte)constant.Type);
-
-                switch (constant.Type)
-                {
-                    case ConstantType.NIL:
-                        break;
-                    case ConstantType.BOOLEAN:
-                        writer.Write((bool)constant.Value);
-                        break;
-                    case ConstantType.NUMBER:
-                        if (Is64)
-                            writer.Write((double)constant.Value);
-                        else writer.Write((float)constant.Value);
-                        break;
-                    case ConstantType.STRING:
-                        writer.LWrite(constant.Value);
-                        break;
-                    default:
-                        throw new Exception($"Invalid constant type: '{constant.Type}', value: '{constant.Value}'");
-                }
-            }
-
-            // i wouldn't count this is constants but lua does (SubFunctions)
-
-            writer.Write(func.FunctionCount);
-
-            for (int i = 0; i < func.FunctionCount; i++)
-                DumpFunction(func.Functions[i], options);
-        }
-        private void DumpDebug(Function func, WriterOptions options)
-        {
-            // Dumping lineinfo
-
-            writer.Write(func.LineinfoSize);
-
-            for (int i = 0; i < func.LineinfoSize; i++)
-                writer.Write(func.lineinfo[i]);
-
-            // Dumping locals
-            writer.Write(func.LocalCount);
-
-            for (int i = 0; i < func.LocalCount; i++)
-            {
-                Local l = func.Locals[i];
-
-                writer.LWrite(l.Varname);
-                writer.Write(l.StartPC);
-                writer.Write(l.EndPC);
-            }
-
-            // Dumping upvalues
-            writer.Write(func.UpValueCount);
-
-            for (int i = 0; i < func.UpValueCount; i++)
-                writer.LWrite(func.UpValues[i].Name);
-        }
-        private void DumpFunction(Function func, WriterOptions options)
-        {
-            // Write info about the function/chunk (this should be universal for every version of lua)
-            {
-                writer.LWrite(func.FuncName);
-                writer.Write(func.LineDefined);
-                writer.Write(func.LastLineDefined);
-                writer.Write(func.nups);
-                writer.Write(func.numparams);
-                writer.Write(func.is_vararg);
-
-                if (!options.KeepOldMaxStacksize)
-                    func.maxstacksize = CalculateMaxStackSize(func);
-
-                writer.Write(func.maxstacksize);
-            }
-
-            switch (options.NewLuaVersion)
-            {
-                case LuaVersion.LUA_VERSION_5_1:
-                    DumpCode(func, options); // Dump the code/instructions
-                    DumpConstants(func, options); // Dump the constants
-                    DumpDebug(func, options); // Dump debug info
-                    break;
-                default:
-                    throw new Exception($"Lua version {options.NewLuaVersion} is currently not supported");
-            }
-        }
-
-        internal LuaWriter(Chunk chunk, WriterOptions options)
+        internal LuaWriter()
         {
             #region Setting up variables
             writerOutput = new MemoryStream();
-            writer = new CustomWriter(writerOutput);
+            writer = new BinaryWriter(writerOutput);
+            #endregion
+        }
 
-            Is64 = chunk.Header.Is64Bit;
-            IsLittle = chunk.Header.IsLittleEndian;
+        public void Write(string outfile)
+        {
+            File.WriteAllBytes(outfile, writerOutput.ToArray());
+        }
 
-            writer.SetArch(Is64);
+        public static LuaWriter GetWriter(Chunk chunk, WriterOptions options)
+        {
+            LuaWriter writer = null;
 
-            if (options.NewLuaVersion == LuaVersion.LUA_VERSION_UNKNOWN)
-                options.NewLuaVersion = chunk.Header.Version;
+            #region Creating the right writer
+            LuaVersion verToUse;
 
-            oldVer = chunk.Header.Version;
+            if (options.KeepLuaVersion)
+                verToUse = chunk.Header.Version;
+            else verToUse = options.NewLuaVersion;
+
+            switch (verToUse)
+            {
+                case LuaVersion.LUA_VERSION_5_1:
+                    writer = new LuaWriter51();
+                    break;
+                default:
+                    throw new Exception($"Didn't find any writer for ({verToUse})");
+            }
+
+            writer.IsLittle = chunk.Header.IsLittleEndian;
+            writer.Is64Bit = chunk.Header.Is64Bit;
             #endregion
 
-            DumpHeader(chunk, options.KeepLuaVersion, options.NewLuaVersion); // Dump the header for the new file
+            writer.DumpHeader(chunk); // Dump the header for the new file
 
             #region Name Checking
             // Adding the @ to the start cause lua expects it (i think)
@@ -254,12 +123,9 @@ namespace LuaLib.Lua.LuaHelpers
             chunk.MainFunction.FuncName = name;
             #endregion
 
-            DumpFunction(chunk.MainFunction, options); // Write the Chunk + all the other things stored in the chunk
-        }
+            writer.DumpFunction(chunk.MainFunction, options); // Write the Chunk + all the other things stored in the chunk
 
-        public void Write(string outfile)
-        {
-            File.WriteAllBytes(outfile, writerOutput.ToArray());
+            return writer;
         }
     }
 }

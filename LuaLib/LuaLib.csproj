@@ -32,6 +32,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'NoDbgBytes|AnyCPU'">
+    <OutputPath>bin\NoDbgBytes\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -66,12 +69,11 @@
     <Compile Include="Lua\LuaHelpers\Versions\LuaReader\LuaReader51.cs" />
     <Compile Include="Lua\LuaHelpers\Versions\LuaReader\LuaReader53.cs" />
     <Compile Include="Lua\LuaHelpers\Versions\LuaReader\LuaReader54.cs" />
+    <Compile Include="Lua\LuaHelpers\Versions\LuaWriter\LuaWriter51.cs" />
     <Compile Include="Lua\LuaVersion.cs" />
     <Compile Include="Lua\WriterOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Lua\LuaHelpers\Versions\LuaWriter\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

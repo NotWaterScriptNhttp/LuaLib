@@ -9,6 +9,8 @@ namespace LuaLib.Lua.LuaHelpers
     // This class exists just cause of debug things
     internal class CustomBinaryReader
     {
+        private const bool EnableDebugBytes = false;
+
         private struct Char
         {
             public byte b;
@@ -22,6 +24,9 @@ namespace LuaLib.Lua.LuaHelpers
 #if DEBUG
         private void UpdateBytes(int size)
         {
+            if (!EnableDebugBytes)
+                return;
+
             List<Char> chars = new List<Char>();
 
             byte FilterByte(byte b)

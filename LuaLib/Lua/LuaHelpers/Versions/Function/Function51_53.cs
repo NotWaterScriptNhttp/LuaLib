@@ -78,8 +78,13 @@ namespace LuaLib.Lua.LuaHelpers.Versions.Function
             {
                 int upvalueCount = lr.ReadNumber32();
 
-                if (func.UpValueCount == 0)
-                    func.UpValues.AddRange(new UpValue[upvalueCount]);
+                if (func.UpValueCount == 0 || func.UpValues == null)
+                {
+                    func.UpValues = new List<UpValue>();
+
+                    for (int i = 0; i < upvalueCount; i++)
+                        func.UpValues.Add(new UpValue() { Name = null });
+                }
 
                 for (int i = 0; i < upvalueCount; i++)
                     func.UpValues[i].Name = lr.ReadString();

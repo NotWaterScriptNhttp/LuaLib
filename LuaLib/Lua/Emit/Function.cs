@@ -74,12 +74,15 @@ namespace LuaLib.Lua.Emit
         {
             get
             {
+                if (lineinfo == null)
+                    lineinfo = new int[0];
+
                 return lineinfo.Length;
             }
         }
 
         public bool IsMainChunk { get; internal set; }
-        public bool IsMainChunkChild { get; private set; }
+        public bool IsMainChunkChild { get; internal set; }
 
         public int LineDefined;
         public int LastLineDefined;
@@ -122,7 +125,7 @@ namespace LuaLib.Lua.Emit
                 List<UpValue> upvalues = new List<UpValue>();
 
                 if (version == LuaVersion.LUA_VERSION_5_1)
-                    return new List<UpValue>();
+                    return upvalues;
 
                 int upCount = reader.ReadNumber32();
 
