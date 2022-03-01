@@ -27,16 +27,16 @@ namespace LuaLib.Lua.LuaHelpers.Versions.Function
                         consts.Add(new Constant(ConstantType.NIL, null));
                         break;
                     case ConstantType.FALSE:
-                        consts.Add(new Constant(ConstantType.BOOLEAN, false));
+                        consts.Add(new Constant(ConstantType.BOOLEAN, false, ConstantType.FALSE));
                         break;
                     case ConstantType.TRUE:
-                        consts.Add(new Constant(ConstantType.BOOLEAN, true));
+                        consts.Add(new Constant(ConstantType.BOOLEAN, true, ConstantType.TRUE));
                         break;
                     case ConstantType.INT54:
-                        consts.Add(new Constant(ConstantType.NUMBER, lr.ReadNumber64()));
+                        consts.Add(new Constant(ConstantType.NUMBER, lr.ReadNumber64(), ConstantType.INT54));
                         break;
                     case ConstantType.NUMBER54:
-                        consts.Add(new Constant(ConstantType.NUMBER, lr.ReadFloat()));
+                        consts.Add(new Constant(ConstantType.NUMBER, lr.ReadFloat(), ConstantType.NUMBER54));
                         break;
                     case ConstantType.STRING:
                     case ConstantType.LNGSTR:

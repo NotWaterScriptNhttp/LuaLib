@@ -5,10 +5,9 @@ using LuaLib.Lua.Emit;
 
 namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 {
-    internal class LuaWriter51 : LuaHelpers.LuaWriter
+    internal class LuaWriter52 : LuaHelpers.LuaWriter
     {
-        internal LuaWriter51() : base() {}
-
+        // Copy + Pasted from Lua5.1 writer
         internal override void DumpString(string str)
         {
             void WriteLen(long len)
@@ -34,7 +33,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 
             writer.Write(LuaSig); // Write the signature of luac
 
-            writer.Write((byte)0x51); // Version of luac
+            writer.Write((byte)0x52); // Version of luac
 
             writer.Write(header.Format);
             writer.Write(BitConverter.IsLittleEndian); // endianness
@@ -46,6 +45,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
                 (byte)(header.Is64Bit ? 8 : 4) // float/double
             });
             writer.Write(header.IsIntegral);
+            writer.Write(LuaTail);
         }
 
         internal override void DumpCode(Emit.Function func, WriterOptions options)
@@ -82,18 +82,30 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
                         DumpString(con.Value);
                         break;
                     default:
-                        throw new Exception($"Constant ({con.Type}) is not supported by lua 5.1");
+                        throw new Exception($"Constant ({con.Type}) is not supported by lua 5.2");
                 }
             }
         }
 
         internal override void DumpUpValues(Emit.Function func, WriterOptions options)
         {
-            throw new NotImplementedException();
+            writer.Write(func.UpValueCount);
+
+            for (int i = 0; i < func.UpValueCount; i++)
+            {
+                UpValue uv = func.UpValues[i];
+
+                writer.Write(uv.InStack);
+                writer.Write(uv.Idx);
+            }
         }
 
         internal override void DumpDebug(Emit.Function func, WriterOptions options)
         {
+            if (func.FuncName != null && func.IsMainChunk == true)
+                DumpString(func.FuncName);
+            else DumpString(null);
+
             writer.Write(func.LineinfoSize);
             for (int i = 0; i < func.LineinfoSize; i++)
                 writer.Write(func.lineinfo[i]);
@@ -115,13 +127,8 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 
         internal override void DumpFunction(Emit.Function func, WriterOptions options)
         {
-            if (func.FuncName != null && func.IsMainChunk == true)
-                DumpString(func.FuncName);
-            else DumpString(null);
-
             writer.Write(func.LineDefined);
             writer.Write(func.LastLineDefined);
-            writer.Write(func.nups);
             writer.Write(func.numparams);
             writer.Write(func.is_vararg);
 
@@ -136,6 +143,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
             for (int i = 0; i < func.FunctionCount; i++)
                 DumpFunction(func.Functions[i], options);
 
+            DumpUpValues(func, options);
             DumpDebug(func, options);
         }
     }

@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using LuaLib.Lua.Emit;
-using LuaLib.Lua.LuaHelpers;
 using LuaLib.Lua.LuaHelpers.Versions.LuaWriter;
 
 namespace LuaLib.Lua.LuaHelpers
@@ -25,6 +24,17 @@ namespace LuaLib.Lua.LuaHelpers
             0x75,
             0x61
         };
+        protected readonly byte[] LuaTail = new byte[6]
+        {
+            0x19,
+            0x93,
+            0x0D,
+            0x0A,
+            0x1A,
+            0x0A
+        };
+        protected readonly int LuaInt = 0x5678;
+        protected readonly double LuaNum = 370.5d;
 
         //TODO: make this working
         protected byte CalculateMaxStackSize(Function func)
@@ -62,14 +72,15 @@ namespace LuaLib.Lua.LuaHelpers
         protected void DumpInt64(long i64) => writer.Write(DoEndian(BitConverter.GetBytes(i64)));
         protected void DumpBool(bool b) => writer.Write(b);
 
-        internal abstract void DumpString(string str);
+        internal abstract void DumpCode(Function func, WriterOptions options);
+        internal abstract void DumpConstants(Function func, WriterOptions options);
+        internal abstract void DumpUpValues(Function func, WriterOptions options);
+        internal abstract void DumpDebug(Function func, WriterOptions options);
+        internal abstract void DumpFunction(Function func, WriterOptions options);
 
         internal abstract void DumpHeader(Chunk chunk);
 
-        internal abstract void DumpCode(Function func, WriterOptions options);
-        internal abstract void DumpConstants(Function func, WriterOptions options);
-        internal abstract void DumpDebug(Function func, WriterOptions options);
-        internal abstract void DumpFunction(Function func, WriterOptions options);
+        internal abstract void DumpString(string str);
 
         internal LuaWriter()
         {
@@ -99,6 +110,12 @@ namespace LuaLib.Lua.LuaHelpers
             {
                 case LuaVersion.LUA_VERSION_5_1:
                     writer = new LuaWriter51();
+                    break;
+                case LuaVersion.LUA_VERSION_5_2:
+                    writer = new LuaWriter52();
+                    break;
+                case LuaVersion.LUA_VERSION_5_3:
+                    writer = new LuaWriter53();
                     break;
                 default:
                     throw new Exception($"Didn't find any writer for ({verToUse})");

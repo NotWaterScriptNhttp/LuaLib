@@ -33,11 +33,9 @@ namespace LuaLib.Lua.LuaHelpers.Versions.Function
                         consts.Add(new Constant(ConstantType.NUMBER, lr.ReadFloat()));
                         break;
                     case ConstantType.NUMBER_INT:
-                        consts.Add(new Constant(ConstantType.NUMBER, lr.ReadNumber64()));
+                        consts.Add(new Constant(ConstantType.NUMBER, lr.ReadNumber64(), ConstantType.NUMBER_INT));
                         break;
                     case ConstantType.STRING:
-                        consts.Add(new Constant(ConstantType.STRING, lr.ReadString()));
-                        break;
                     case ConstantType.LNGSTR:
                         consts.Add(new Constant(ConstantType.STRING, lr.ReadString()));
                         break;

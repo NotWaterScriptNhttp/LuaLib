@@ -31,12 +31,14 @@ namespace LuaLib.Lua.Emit
     public class Constant
     {
         public ConstantType Type;
+        public ConstantType? AltType;
         public dynamic Value;
 
-        public Constant(ConstantType type, dynamic value)
+        public Constant(ConstantType type, dynamic value, ConstantType? altType = null)
         {
             Type = type;
             Value = value;
+            AltType = altType;
         }
 
         public override string ToString()
@@ -45,7 +47,8 @@ namespace LuaLib.Lua.Emit
 
             sb.Append("Constant: {\n");
             sb.Append($" Type: {Type},\n");
-            sb.Append($" Value: {Value}\n");
+            sb.Append($" AlternativeType: {AltType},\n");
+            sb.Append($" Value: {Value},\n");
             sb.Append("} - Constant");
 
             return sb.ToString();
