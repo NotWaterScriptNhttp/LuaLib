@@ -2,6 +2,8 @@
 {
     public enum OpCodes
     {
+        #region Lua 5.1
+
         MOVE, // A B        R(A) := R(B)
 
         LOADK,  // A Bx     R(A) := Kst(Bx)
@@ -56,7 +58,9 @@
 
         VARARG, // A B       R(A), R(A + 1), ..., R(A + B - 1) = vararg
 
-        // Lua 5.2
+        #endregion
+
+        #region Lua 5.2
 
         LOADKX, // Ax
 
@@ -67,7 +71,9 @@
 
         EXTRAARG, // Ax
 
-        // Lua 5.3
+        #endregion
+
+        #region Lua 5.3
 
         IDIV, // A B C
 
@@ -78,7 +84,9 @@
         SHR, // A B C
         BNOT, // A B
 
-        // Lua 5.4
+        #endregion
+
+        #region Lua 5.4
 
         LOADI, // A sBx
         LOADF, // A sBx
@@ -127,6 +135,117 @@
         TFORPREP, // A Bx
 
         VARARGPREP, // A
+
+        #endregion
+
+        #region LuaU (more info about opcodes at https://github.com/Roblox/luau/blob/master/Compiler/include/Luau/Bytecode.h)
+
+        U_NOP, // nop
+        U_BREAK, // debugger break
+
+        U_LOADNIL, // A
+        U_LOADB, // A B C
+        U_LOADN, // A D
+        U_LOADK, // A D
+
+        U_MOVE, // A B
+
+        U_GETGLOBAL, // A C
+        U_SETGLOBAL, // A C
+
+        U_GETUPVAL, // A B
+        U_SETUPVAL, // A B
+
+        U_CLOSEUPVALS, // A
+
+        U_GETIMPORT, // A D
+       
+        U_GETTABLE, // A B C
+        U_SETTABLE, // A B C
+
+        U_GETTABLEKS, // A B C
+        U_SETTABLEKS, // A B C
+
+        U_GETTABLEN, // A B C
+        U_SETTABLEN, // A B C
+
+        U_NEWCLOSURE, // A D
+        U_NAMECALL, // A B C
+        U_CALL, // A B C
+        U_RETURN, // A B
+
+        U_JUMP, // D
+        U_JUMPBACK, // D
+        U_JUMPIF, // A D
+        U_JUMPIFNOT, // A D
+        U_JUMPIFEQ, // A D
+        U_JUMPIFLE, // A D
+        U_JUMPIFLT, // A D
+        U_JUMPIFNOTEQ, // A D
+        U_JUMPIFNOTLE, // A D
+        U_JUMPIFNOTLT, // A D
+
+        U_ADD, // A B C
+        U_SUB, // A B C
+        U_MUL, // A B C
+        U_DIV, // A B C
+        U_MOD, // A B C
+        U_POW, // A B C
+
+        U_ADDK, // A B C
+        U_SUBK, // A B C 
+        U_MULK, // A B C
+        U_DIVK, // A B C
+        U_MODK, // A B C
+        U_POWK, // A B C
+
+        U_AND, // A B C
+        U_OR, // A B C
+
+        U_ANDK, // A B C
+        U_ORK, // A B C
+
+        U_CONCAT, // A B C
+
+        U_NOT, // A B
+        U_MINUS, // A B
+        U_LENGTH, // A B
+
+        U_NEWTABLE, // A B
+        U_DUPTABLE, // A D
+        U_SETLIST, // A B C
+       
+        U_FORNPREP, // A D
+        U_FORNLOOP, // A D
+        U_FORGLOOP, // A D
+        U_FORGPREP_INEXT, // none
+        U_FORGLOOP_INEXT, // none
+        U_FORGPREP_NEXT, // none
+        U_FORGLOOP_NEXT, // none
+
+        U_GETVARARGS, // A B
+
+        U_DUPCLOSURE, // A D
+
+        U_PREPVARARGS, // A
+
+        U_LOADKX, // A
+        U_JUMPX, // E
+
+        U_FASTCALL, // A C
+        U_COVERAGE, // E
+        U_CAPTURE, // A B
+
+        U_JUMPIFEQK, // A D
+        U_JUMPIFNOTEQK, // A D
+
+        U_FASTCALL1, // A B C
+        U_FASTCALL2, // A B C
+        U_FASTCALL2K, // A B C
+
+        U__COUNT, // none
+
+        #endregion
 
         // Custom opcodes
 
