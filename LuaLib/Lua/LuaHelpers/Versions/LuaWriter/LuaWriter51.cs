@@ -14,11 +14,11 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
             void WriteLen(long len)
             {
                 if (Is64Bit)
-                    writer.Write(DoEndian(BitConverter.GetBytes(len)));
-                else writer.Write(DoEndian(BitConverter.GetBytes((int)len)));
+                    DumpInt64(len);
+                else DumpInt((int)len);
             }
 
-            if (str == null)
+            if (str == null || str == "")
             {
                 WriteLen(0);
                 return;
@@ -115,7 +115,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 
         internal override void DumpFunction(Emit.Function func, WriterOptions options)
         {
-            if (func.FuncName != null && func.IsMainChunk == true)
+            if (func.IsMainChunk == true)
                 DumpString(func.FuncName);
             else DumpString(null);
 

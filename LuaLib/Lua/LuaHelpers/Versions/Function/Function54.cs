@@ -1,9 +1,6 @@
 ﻿using LuaLib.Lua.Emit;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LuaLib.Lua.LuaHelpers.Versions.Function
 {
@@ -39,8 +36,10 @@ namespace LuaLib.Lua.LuaHelpers.Versions.Function
                         consts.Add(new Constant(ConstantType.NUMBER, lr.ReadFloat(), ConstantType.NUMBER54));
                         break;
                     case ConstantType.STRING:
-                    case ConstantType.LNGSTR:
                         consts.Add(new Constant(ConstantType.STRING, lr.ReadString()));
+                        break;
+                    case ConstantType.LNGSTR:
+                        consts.Add(new Constant(ConstantType.STRING, lr.ReadString(), ConstantType.LNGSTR));
                         break;
                     default:
                         throw new Exception($"This constant is not valid '{ttype} -> ({(ConstantType)ttype})'");

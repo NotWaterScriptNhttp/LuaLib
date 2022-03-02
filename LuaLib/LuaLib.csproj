@@ -72,6 +72,7 @@
     <Compile Include="Lua\LuaHelpers\Versions\LuaWriter\LuaWriter51.cs" />
     <Compile Include="Lua\LuaHelpers\Versions\LuaWriter\LuaWriter52.cs" />
     <Compile Include="Lua\LuaHelpers\Versions\LuaWriter\LuaWriter53.cs" />
+    <Compile Include="Lua\LuaHelpers\Versions\LuaWriter\LuaWriter54.cs" />
     <Compile Include="Lua\LuaVersion.cs" />
     <Compile Include="Lua\WriterOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

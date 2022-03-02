@@ -76,7 +76,7 @@ namespace LuaLib.Lua.LuaHelpers
                 c.b = FilterByte(bytes[i]);
                 chars.Add(c);
 
-                if (((i + 1) % 24) == 0)
+                if (((i + 1) % 58) == 0)
                 {
                     WriteCharVisuals();
                 }

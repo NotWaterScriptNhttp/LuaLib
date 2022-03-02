@@ -5,23 +5,23 @@ using LuaLib.Lua.Emit;
 
 namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 {
-    internal class LuaWriter53 : LuaHelpers.LuaWriter
+    internal class LuaWriter54 : LuaHelpers.LuaWriter
     {
+        protected override void DumpInt(int i32)
+        {
+            if (i32 < 0)
+                throw new Exception("Int must be positive");
+
+            DumpSize((ulong)i32);
+        }
+
         internal override void DumpString(string str)
         {
             if (str == null || str == "")
-                writer.Write((byte)0);
+                DumpSize(0);
             else
             {
-                int size = str.Length + 1;
-                if (size < 0xFF)
-                    writer.Write((byte)size);
-                else
-                {
-                    writer.Write((byte)0xFF);
-                    writer.Write(size);
-                }
-
+                DumpSize((ulong)str.Length + 1);
                 writer.Write(Encoding.UTF8.GetBytes(str));
             }
         }
@@ -32,15 +32,13 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 
             writer.Write(LuaSig); // Write the signature of luac
 
-            writer.Write((byte)0x53); // Version of luac
-
+            writer.Write((byte)0x54); // Version of luac
             writer.Write(header.Format);
+
             writer.Write(LuaTail);
 
             writer.Write(new byte[]
             {
-                4, // int32
-                (byte)(header.Is64Bit ? 8 : 4), // size_t
                 4, // instruction (uint32)
                 (byte)(header.Is64Bit ? 8 : 4), // int / long
                 (byte)(header.Is64Bit ? 8 : 4) // float / double
@@ -51,7 +49,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 
         internal override void DumpCode(Emit.Function func, WriterOptions options)
         {
-            writer.Write(func.InstructionCount);
+            DumpInt(func.InstructionCount);
 
             for (int i = 0; i < func.InstructionCount; i++)
                 writer.Write(func.Instructions[i].GetRawInstruction());
@@ -59,7 +57,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 
         internal override void DumpConstants(Emit.Function func, WriterOptions options)
         {
-            writer.Write(func.ConstantCount);
+            DumpInt(func.ConstantCount);
 
             for (int i = 0; i < func.ConstantCount; i++)
             {
@@ -73,35 +71,36 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
                 {
                     case ConstantType.NIL:
                         break;
-                    case ConstantType.BOOLEAN:
-                        writer.Write((bool)con.Value);
+                    case ConstantType.BOOLEAN: // Type boolean always has AltType
                         break;
                     case ConstantType.NUMBER:
-                        if (con.AltType == ConstantType.NUMBER_INT)
                         {
-                            if (Is64Bit)
-                                DumpInt64(con.Value);
-                            else DumpInt(con.Value);
-                        }
-                        else
-                        {
-                            if (Is64Bit)
-                                writer.Write(DoEndian(BitConverter.GetBytes((double)con.Value)));
-                            else writer.Write(DoEndian(BitConverter.GetBytes((float)con.Value)));
+                            if (con.AltType == ConstantType.INT54)
+                            {
+                                if (Is64Bit)
+                                    DumpInt32(con.Value);
+                                else DumpInt64(con.Value);
+                            }
+                            else
+                            {
+                                if (Is64Bit)
+                                    writer.Write(DoEndian(BitConverter.GetBytes((double)con.Value)));
+                                else writer.Write(DoEndian(BitConverter.GetBytes((float)con.Value)));
+                            }
                         }
                         break;
                     case ConstantType.STRING:
                         DumpString(con.Value);
                         break;
                     default:
-                        throw new Exception($"Constant ({con.Type}{(con.AltType.HasValue ? $" / {con.AltType}" : "")}) is not supported by lua 5.3");
+                        throw new Exception($"Constant ({con.Type}{(con.AltType.HasValue ? $" / {con.AltType}" : "")}) is not supported by lua 5.4");
                 }
             }
         }
 
         internal override void DumpUpValues(Emit.Function func, WriterOptions options)
         {
-            writer.Write(func.UpValueCount);
+            DumpInt(func.UpValueCount);
 
             for (int i = 0; i < func.UpValueCount; i++)
             {
@@ -109,26 +108,36 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 
                 writer.Write(uv.InStack);
                 writer.Write(uv.Idx);
+                writer.Write(uv.Kind);
             }
         }
 
         internal override void DumpDebug(Emit.Function func, WriterOptions options)
         {
-            writer.Write(func.LineinfoSize);
+            DumpInt(func.LineinfoSize);
             for (int i = 0; i < func.LineinfoSize; i++)
-                writer.Write(func.lineinfo[i]);
+                writer.Write((byte)func.lineinfo[i]);
 
-            writer.Write(func.LocalCount);
+            DumpInt(func.AbsLineinfoCount);
+            for (int i = 0; i < func.AbsLineinfoCount; i++)
+            {
+                AbsLineInfo ali = func.AbsLineinfo[i];
+
+                DumpInt(ali.pc);
+                DumpInt(ali.line);
+            }
+
+            DumpInt(func.LocalCount);
             for (int i = 0; i < func.LocalCount; i++)
             {
                 Local loc = func.Locals[i];
 
                 DumpString(loc.Varname);
-                writer.Write(loc.StartPC);
-                writer.Write(loc.EndPC);
+                DumpInt(loc.StartPC);
+                DumpInt(loc.EndPC);
             }
 
-            writer.Write(func.UpValueCount);
+            DumpInt(func.UpValueCount);
             for (int i = 0; i < func.UpValueCount; i++)
                 DumpString(func.UpValues[i].Name);
         }
@@ -142,8 +151,8 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
             }
             else DumpString(null);
 
-            writer.Write(func.LineDefined);
-            writer.Write(func.LastLineDefined);
+            DumpInt(func.LineDefined);
+            DumpInt(func.LastLineDefined);
             writer.Write(func.numparams);
             writer.Write(func.is_vararg);
 
@@ -157,7 +166,7 @@ namespace LuaLib.Lua.LuaHelpers.Versions.LuaWriter
 
             #region DumpProtos
 
-            writer.Write(func.FunctionCount);
+            DumpInt(func.FunctionCount);
 
             for (int i = 0; i < func.FunctionCount; i++)
                 DumpFunction(func.Functions[i], options);

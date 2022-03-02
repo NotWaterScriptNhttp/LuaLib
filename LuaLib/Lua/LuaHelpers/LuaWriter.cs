@@ -69,6 +69,7 @@ namespace LuaLib.Lua.LuaHelpers
                 writer.Write(buff[i + dibs - n]);
         }
         virtual protected void DumpInt(int i32) => writer.Write(DoEndian(BitConverter.GetBytes(i32)));
+        protected void DumpInt32(int i32) => writer.Write(DoEndian(BitConverter.GetBytes(i32))); // Copy of the above cause Lua5.4 overrides it
         protected void DumpInt64(long i64) => writer.Write(DoEndian(BitConverter.GetBytes(i64)));
         protected void DumpBool(bool b) => writer.Write(b);
 
@@ -90,10 +91,8 @@ namespace LuaLib.Lua.LuaHelpers
             #endregion
         }
 
-        public void Write(string outfile)
-        {
-            File.WriteAllBytes(outfile, writerOutput.ToArray());
-        }
+        public byte[] GetWritenBytes() => writerOutput.ToArray();
+        public void Write(string outfile) => File.WriteAllBytes(outfile, GetWritenBytes());
 
         public static LuaWriter GetWriter(Chunk chunk, WriterOptions options)
         {
@@ -116,6 +115,9 @@ namespace LuaLib.Lua.LuaHelpers
                     break;
                 case LuaVersion.LUA_VERSION_5_3:
                     writer = new LuaWriter53();
+                    break;
+                case LuaVersion.LUA_VERSION_5_4:
+                    writer = new LuaWriter54();
                     break;
                 default:
                     throw new Exception($"Didn't find any writer for ({verToUse})");
