@@ -56,17 +56,6 @@
     <Compile Include="Lua\LuaVersion.cs" />
     <Compile Include="Lua\WriterOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Tests\Chunk.cs" />
-    <Compile Include="Tests\Emit\Constant.cs" />
-    <Compile Include="Tests\Emit\Function.cs" />
-    <Compile Include="Tests\Emit\Local.cs" />
-    <Compile Include="Tests\Emit\OpArgMask.cs" />
-    <Compile Include="Tests\Emit\OpCodes.cs" />
-    <Compile Include="Tests\Emit\UpValue.cs" />
-    <Compile Include="Tests\Header.cs" />
-    <Compile Include="Tests\Emit\Instruction.cs" />
-    <Compile Include="Tests\Internal\OpcodeMappings.cs" />
-    <Compile Include="Tests\LuaStream.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
