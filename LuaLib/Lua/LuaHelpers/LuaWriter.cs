@@ -225,9 +225,7 @@ namespace LuaLib.Lua.LuaHelpers
             DumpFunction(chunk.MainFunction, options); // Write the Chunk + all the other things stored in the chunk
         }
 
-        public void Write(string outfile)
-        {
-            File.WriteAllBytes(outfile, writerOutput.ToArray());
-        }
+        public byte[] GetWritenBytes() => writerOutput.ToArray();
+        public void Write(string outfile) => File.WriteAllBytes(outfile, writerOutput.ToArray());
     }
 }
