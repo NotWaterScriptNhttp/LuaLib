@@ -1,12 +1,24 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Collections.Generic;
 
 namespace LuaLib.Lua.Emit
 {
+    public struct Registers
+    {
+        public OpCodes opcode;
+
+        public bool A, B, C, k;
+        public bool Ax, Bx;
+        public bool sB, sC, sBx, sJ;
+
+        public bool D { get => sBx; }
+        public bool E { get => sJ; }
+    }
+
     public class Instruction
     {
-        private class OpcodeMap
+        public class OpcodeMap
         {
             private static Dictionary<LuaVersion, OpCodes[]> Map = new Dictionary<LuaVersion, OpCodes[]>
             {
@@ -310,6 +322,117 @@ namespace LuaLib.Lua.Emit
                         OpCodes.EXTRAARG
                     }
                 }, // Lua5.4
+                {
+                    LuaVersion.LUA_VERSION_U,
+                    new OpCodes[]
+                    {
+                        OpCodes.U_NOP,
+                        OpCodes.U_BREAK,
+
+                        OpCodes.U_LOADNIL,
+                        OpCodes.U_LOADB,
+                        OpCodes.U_LOADN,
+                        OpCodes.U_LOADK,
+
+                        OpCodes.U_MOVE,
+
+                        OpCodes.U_GETGLOBAL,
+                        OpCodes.U_SETGLOBAL,
+
+                        OpCodes.U_GETUPVAL,
+                        OpCodes.U_SETUPVAL,
+
+                        OpCodes.U_CLOSEUPVALS,
+                        OpCodes.U_GETIMPORT,
+
+                        OpCodes.U_GETTABLE,
+                        OpCodes.U_SETTABLE,
+
+                        OpCodes.U_GETTABLEKS,
+                        OpCodes.U_SETTABLEKS,
+
+                        OpCodes.U_GETTABLEN,
+                        OpCodes.U_SETTABLEN,
+
+                        OpCodes.U_NEWCLOSURE,
+                        OpCodes.U_NAMECALL,
+                        OpCodes.U_CALL,
+                        OpCodes.U_RETURN,
+
+                        OpCodes.U_JUMP,
+                        OpCodes.U_JUMPBACK,
+                        OpCodes.U_JUMPIF,
+                        OpCodes.U_JUMPIFNOT,
+                        OpCodes.U_JUMPIFEQ,
+                        OpCodes.U_JUMPIFLE,
+                        OpCodes.U_JUMPIFLT,
+                        OpCodes.U_JUMPIFNOTEQ,
+                        OpCodes.U_JUMPIFNOTLE,
+                        OpCodes.U_JUMPIFNOTLT,
+
+                        OpCodes.U_ADD,
+                        OpCodes.U_SUB,
+                        OpCodes.U_MUL,
+                        OpCodes.U_DIV,
+                        OpCodes.U_MOD,
+                        OpCodes.U_POW,
+
+                        OpCodes.U_ADDK,
+                        OpCodes.U_SUBK,
+                        OpCodes.U_MULK,
+                        OpCodes.U_DIVK,
+                        OpCodes.U_MODK,
+                        OpCodes.U_POWK,
+
+                        OpCodes.U_ADD,
+                        OpCodes.U_OR,
+
+                        OpCodes.U_ANDK,
+                        OpCodes.U_ORK,
+
+                        OpCodes.U_CONCAT,
+
+                        OpCodes.U_NOT,
+                        OpCodes.U_MINUS,
+                        OpCodes.U_LENGTH,
+
+                        OpCodes.U_NEWTABLE,
+                        OpCodes.U_DUPTABLE,
+
+                        OpCodes.U_SETLIST,
+
+                        OpCodes.U_FORNPREP,
+                        OpCodes.U_FORNLOOP,
+                        OpCodes.U_FORGLOOP,
+                        OpCodes.U_FORGPREP_INEXT,
+                        OpCodes.U_FORGLOOP_INEXT,
+                        OpCodes.U_FORGPREP_NEXT,
+                        OpCodes.U_FORGLOOP_NEXT,
+
+                        OpCodes.U_GETVARARGS,
+
+                        OpCodes.U_DUPCLOSURE,
+
+                        OpCodes.U_PREPVARARGS,
+
+                        OpCodes.U_LOADKX,
+
+                        OpCodes.U_JUMPX,
+
+                        OpCodes.U_FASTCALL,
+                        OpCodes.U_COVERAGE,
+                        OpCodes.U_CAPTURE,
+
+                        OpCodes.U_JUMPIFEQK,
+                        OpCodes.U_JUMPIFNOTEQK,
+
+                        OpCodes.U_FASTCALL1,
+                        OpCodes.U_FASTCALL2,
+                        OpCodes.U_FASTCALL2K,
+
+                        OpCodes.U__COUNT // idk if they use this opcode in the writen file so thats why its added here
+                    }
+                } // LuaU
             };
 
             private OpcodeMap() {}
@@ -336,15 +459,7 @@ namespace LuaLib.Lua.Emit
                 throw new Exception($"Cannot find number for '{opcode}'");
             }
         }
-        private struct Registers
-        {
-            public OpCodes opcode;
-
-            public bool A, B, C, k;
-            public bool Ax, Bx;
-            public bool sB, sC, sBx, sJ;
-        }
-        private class RegistersMap
+        public class RegistersMap
         {
             private static Dictionary<LuaVersion, Registers[]> Map = new Dictionary<LuaVersion, Registers[]>
             {
@@ -1998,6 +2113,579 @@ namespace LuaLib.Lua.Emit
                         }, // EXTRAARG
                     }
                 }, // Lua5.4
+                { 
+                    LuaVersion.LUA_VERSION_U,
+                    new Registers[]
+                    {
+                        new Registers
+                        {
+                            opcode = OpCodes.U_NOP
+                        }, // NOP
+                        new Registers
+                        {
+                            opcode = OpCodes.U_BREAK,
+                        }, // BREAK
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_LOADNIL,
+
+                            A = true
+                        }, // LOADNIL
+                        new Registers
+                        {
+                            opcode = OpCodes.U_LOADB,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // LOADB
+                        new Registers
+                        {
+                            opcode = OpCodes.U_LOADN,
+
+                            A = true,
+                            sBx = true
+                        }, // LOADN
+                        new Registers
+                        {
+                            opcode = OpCodes.U_LOADK,
+
+                            A = true,
+                            sBx = true
+                        }, // LOADK
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_MOVE,
+
+                            A = true,
+                            B = true
+                        }, // MOVE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_GETGLOBAL,
+
+                            A = true,
+                            C = true,
+                        }, // GETGLOBAL
+                        new Registers
+                        {
+                            opcode = OpCodes.U_SETGLOBAL,
+
+                            A = true,
+                            C = true
+                        }, // SETGLOBAL
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_GETUPVAL,
+
+                            A = true,
+                            B = true
+                        }, // GETUPVAL
+                        new Registers
+                        {
+                            opcode = OpCodes.U_SETUPVAL,
+
+                            A = true,
+                            B = true
+                        }, // SETUPVAL
+                        new Registers
+                        {
+                            opcode = OpCodes.U_CLOSEUPVALS,
+
+                            A = true
+                        }, // CLOSEUPVALS
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_GETIMPORT,
+
+                            A = true,
+                            sBx = true
+                        }, // GETIMPORT
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_GETTABLE,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // GETTABLE
+                        new Registers
+                        {
+                            opcode = OpCodes.U_SETTABLE,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SETTABLE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_GETTABLEKS,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // GETTABLEKS
+                        new Registers
+                        {
+                            opcode = OpCodes.U_SETTABLEKS,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SETTABLEKS
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_GETTABLEN,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // GETTABLEN
+                        new Registers
+                        {
+                            opcode = OpCodes.U_SETTABLEN,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SETTABLEN
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_NEWCLOSURE,
+
+                            A = true,
+                            sBx = true
+                        }, // NEWCLOSURE
+                        new Registers
+                        {
+                            opcode = OpCodes.U_NAMECALL,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // NAMECALL
+                        new Registers
+                        {
+                            opcode = OpCodes.U_CALL,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // CALL
+                        new Registers
+                        {
+                            opcode = OpCodes.U_RETURN,
+
+                            A = true,
+                            B = true
+                        }, // RETURN
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMP,
+
+                            sBx = true
+                        }, // JUMP
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPBACK,
+
+                            sBx = true
+                        }, // JUMPBACK
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIF,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIF
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFNOT,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFNOT
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFEQ,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFEQ
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFLE,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFLE
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFLT,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFLT
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFNOTEQ,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFNOTEQ
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFNOTLE,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFNOTLE
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFNOTLT,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFNOTLT
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_ADD,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // ADD
+                        new Registers
+                        {
+                            opcode = OpCodes.U_SUB,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SUB
+                        new Registers
+                        {
+                            opcode = OpCodes.U_MUL,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // MUL
+                        new Registers
+                        {
+                            opcode = OpCodes.U_DIV,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // DIV
+                        new Registers
+                        {
+                            opcode = OpCodes.U_MOD,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // MOD
+                        new Registers
+                        {
+                            opcode = OpCodes.U_POW,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // POW
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_ADDK,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // ADDK
+                        new Registers
+                        {
+                            opcode = OpCodes.U_SUBK,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SUBK
+                        new Registers
+                        {
+                            opcode = OpCodes.U_MULK,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // MULK
+                        new Registers
+                        {
+                            opcode = OpCodes.U_DIVK,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // DIVK
+                        new Registers
+                        {
+                            opcode = OpCodes.U_MODK,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // MODK
+                        new Registers
+                        {
+                            opcode = OpCodes.U_POWK,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // POWK
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_AND,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // AND
+                        new Registers
+                        {
+                            opcode = OpCodes.U_OR,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // OR
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_ANDK,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // ANDK
+                        new Registers
+                        {
+                            opcode = OpCodes.U_ORK,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // ORK
+
+                        new Registers
+                        {
+                            opcode = OpCodes.CONCAT,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // CONCAT
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_NOT,
+
+                            A = true,
+                            B = true
+                        }, // NOT
+                        new Registers
+                        {
+                            opcode = OpCodes.U_MINUS,
+
+                            A = true,
+                            B = true
+                        }, // MINUS
+                        new Registers
+                        {
+                            opcode = OpCodes.U_LENGTH,
+
+                            A = true,
+                            B = true
+                        }, // LENGTH
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_NEWTABLE,
+
+                            A = true,
+                            B = true
+                        }, // NEWTABLE
+                        new Registers
+                        {
+                            opcode = OpCodes.U_DUPTABLE,
+
+                            A = true,
+                            B = true
+                        }, // DUPTABLE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_SETLIST,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // SETLIST
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FORNPREP,
+
+                            A = true,
+                            sBx = true
+                        }, // FORNPREP
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FORNLOOP,
+
+                            A = true,
+                            sBx = true
+                        }, // FORNLOOP
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FORGLOOP,
+
+                            A = true,
+                            sBx = true
+                        }, // FORGLOOP
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FORGPREP_INEXT
+                        }, // FORGPREP_INEXT
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FORGLOOP_INEXT
+                        }, // FORGLOOP_INEXT
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FORGPREP_NEXT
+                        }, // FORGPREP_NEXT
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FORGLOOP_NEXT
+                        }, // FORGLOOP_NEXT
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_GETVARARGS,
+
+                            A = true,
+                            B = true
+                        }, // GETVARARGS
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_DUPCLOSURE,
+
+                            A = true,
+                            sBx = true
+                        }, // DUPCLOSURE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_PREPVARARGS,
+
+                            A = true
+                        }, // PREPVARARGS
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_LOADKX,
+
+                            A = true
+                        }, // LOADKX
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPX,
+
+                            sJ = true
+                        }, // JUMPX
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FASTCALL,
+
+                            A = true,
+                            C = true
+                        }, // FASTCALL
+                        new Registers
+                        {
+                            opcode = OpCodes.U_COVERAGE,
+
+                            sJ = true
+                        }, // COVERAGE
+                        new Registers
+                        {
+                            opcode = OpCodes.U_CAPTURE,
+
+                            A = true,
+                            B = true
+                        }, // CAPTURE
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFEQK,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFEQK
+                        new Registers
+                        {
+                            opcode = OpCodes.U_JUMPIFNOTEQK,
+
+                            A = true,
+                            sBx = true
+                        }, // JUMPIFNOTEQK
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FASTCALL1,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // FASTCALL1
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FASTCALL2,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // FASTCALL2
+                        new Registers
+                        {
+                            opcode = OpCodes.U_FASTCALL2K,
+
+                            A = true,
+                            B = true,
+                            C = true
+                        }, // FASTCALL2K
+
+                        new Registers
+                        {
+                            opcode = OpCodes.U__COUNT
+                        } // _COUNT
+                    }
+                }, // LuaU
             };
 
             public static Registers GetRegister(LuaVersion version, OpCodes opcode, bool throwError = true)
@@ -2025,6 +2713,7 @@ namespace LuaLib.Lua.Emit
         }
 
         #region Consts
+
         private abstract class ConstsBase
         {
             abstract public int SIZE_OP { get; protected set; }
@@ -2132,6 +2821,23 @@ namespace LuaLib.Lua.Emit
             public override int POS_Bx { get; protected set; } = 15;
             public override int POS_sJ { get; protected set; } = 7;
         }
+        private class ConstsU : ConstsBase
+        {
+            public override int SIZE_OP { get; protected set; } = 8;
+            public override int SIZE_A { get; protected set; } = 8;
+            public override int SIZE_B { get; protected set; } = 8;
+            public override int SIZE_C { get; protected set; } = 8;
+            public override int SIZE_Bx { get; protected set; } = 16;
+            public override int SIZE_sJ { get; protected set; } = 24;
+
+            public override int POS_OP { get; protected set; } = 0;
+            public override int POS_A { get; protected set; } = 8;
+            public override int POS_B { get; protected set; } = 16;
+            public override int POS_C { get; protected set; } = 24;
+            public override int POS_Bx { get; protected set; } = 16;
+            public override int POS_sJ { get; protected set; } = 8;
+        }
+
         #endregion
 
         private LuaVersion version;
@@ -2141,6 +2847,10 @@ namespace LuaLib.Lua.Emit
         public int A, B, C, k;
         public int Ax, Bx;
         public int sB, sC, sBx, sJ;
+
+        //Luau Registers
+        public int D { get => sBx; }
+        public int E { get => sJ; }
 
         #region Main methods
         private bool IsNeg(int num) => num + num < num; // -10 + -10 = -20 thus doing Less than -10 will return true
@@ -2233,6 +2943,9 @@ namespace LuaLib.Lua.Emit
                     break;
                 case LuaVersion.LUA_VERSION_5_4:
                     consts = new Consts54();
+                    break;
+                case LuaVersion.LUA_VERSION_U:
+                    consts = new ConstsU();
                     break;
                 default:
                     throw new Exception($"Cannot decode any instructions without constants ({version})");
