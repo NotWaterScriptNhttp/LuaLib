@@ -8,6 +8,14 @@ using LuaLib.LuaHelpers.Versions.LuaReader;
 
 namespace LuaLib
 {
+    public struct ChunkSettings
+    {
+        public bool IsLuau;
+        public bool IgnoreReadError;
+        public bool AddRefs = true;
+        public bool AutoFunctionNames = true; // Gets the function name automaticaly
+    }
+
     public class Chunk
     {
         public LuaHeader Header { get; private set; }
@@ -15,17 +23,7 @@ namespace LuaLib
 
         private Chunk() {}
 
-        public bool Write(string out_file, WriterOptions options = null)
-        {
-            if (options == null)
-                options = new WriterOptions();
-
-            LuaWriter.GetWriter(this, options).Write(out_file);
-
-            return true;
-        }
-
-        public static Chunk Load(string file, bool IsLuau = false, bool ignoreReadError = false)
+        public static Chunk Load(string file, ChunkSettings settings = default)
         {
             if (!File.Exists(file))
                 throw new Exception("File does not exist!");
@@ -33,11 +31,11 @@ namespace LuaLib
             Chunk chunk = new Chunk();
 
             CustomBinaryReader br = new CustomBinaryReader(new MemoryStream(File.ReadAllBytes(file)));
-
-            //NOTE: Luau does not have a header
+            
             LuaHeader header = null;
 
-            if (IsLuau)
+            //NOTE: Luau does not have a header
+            if (settings.IsLuau)
                 header = new LuaHeader(LuaVersion.LUA_VERSION_U);
             else header = LuaHeader.GetHeader(br);
 
@@ -74,15 +72,56 @@ namespace LuaLib
             chunk.MainFunction = Function.GetFunction(lr, header.Version);
             chunk.MainFunction.IsMainChunk = true;
 
+            #region Some final non important things
+
             for (int i = 0; i < chunk.MainFunction.FunctionCount; i++)
                 chunk.MainFunction.Functions[i].IsMainChunkChild = true;
 
-            if (!lr.IsFullyRead() && !ignoreReadError)
+            void Addrefs(Function func)
+            {
+                if (func.FunctionCount == 0)
+                    return;
+
+                foreach(Instruction inst in func.Instructions)
+                    if (inst.Opcode == OpCodes.CLOSURE)
+                    {
+                        Function func2 = func.Functions[inst.Bx];
+
+                        func2.DefingInstruction = inst;
+                        func2.Parent = func;
+
+                        Addrefs(func2);
+                    }
+            }
+            void GetFuncName(Function func)
+            {
+                func.TryGetName();
+
+                func.Functions.ForEach(GetFuncName);
+            }
+
+            if (settings.AddRefs)
+                Addrefs(chunk.MainFunction);
+            if (settings.AutoFunctionNames) // Doesn't work (needs some debuging on why it doesn't work)
+                GetFuncName(chunk.MainFunction);
+
+            #endregion
+
+            if (!lr.IsFullyRead() && !settings.IgnoreReadError)
                 throw new Exception($"The file {Path.GetFileName(file)} was not fully read!");
 
             return chunk;
         }
 
+        public bool Write(string out_file, WriterOptions options = default)
+        {
+            if (options == null)
+                options = new WriterOptions();
+
+            LuaWriter.GetWriter(this, options).Write(out_file);
+
+            return true;
+        }
         public static bool Write(Chunk chunk, string file, WriterOptions options = null) => chunk.Write(file, options);
     }
 }

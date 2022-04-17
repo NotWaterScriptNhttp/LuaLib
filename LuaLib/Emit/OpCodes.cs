@@ -249,6 +249,7 @@
 
         // Custom opcodes
 
-        INVALID
+        INVALID,
+        NOP // used in decompiler
     }
 }

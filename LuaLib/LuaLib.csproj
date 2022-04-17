@@ -2,6 +2,9 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{3CC551C1-EAE6-4949-8E63-23074F80DA26}</ProjectGuid>
@@ -47,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Chunk.cs" />
+    <Compile Include="Decompiler.cs" />
     <Compile Include="Emit\Constant.cs" />
     <Compile Include="Emit\Function.cs" />
     <Compile Include="Emit\Instruction.cs" />
@@ -55,12 +59,15 @@
     <Compile Include="Emit\OpCodes.cs" />
     <Compile Include="Emit\UpValue.cs" />
     <Compile Include="LuaHelpers\CustomBinaryReader.cs" />
+    <Compile Include="LuaHelpers\DecompilerBase.cs" />
     <Compile Include="LuaHelpers\FunctionParser.cs" />
     <Compile Include="LuaHelpers\LuaHeader.cs" />
     <Compile Include="LuaHelpers\LuaReader.cs" />
     <Compile Include="LuaHelpers\LuaWriter.cs" />
+    <Compile Include="LuaHelpers\Versions\Decompiler\Decompiler51.cs" />
     <Compile Include="LuaHelpers\Versions\Function\Function51_53.cs" />
     <Compile Include="LuaHelpers\Versions\Function\Function54.cs" />
+    <Compile Include="LuaHelpers\Versions\LuaHeader\CustomLuaHeader.cs" />
     <Compile Include="LuaHelpers\Versions\LuaHeader\LuaHeader52.cs" />
     <Compile Include="LuaHelpers\Versions\LuaHeader\LuaHeader51.cs" />
     <Compile Include="LuaHelpers\Versions\LuaHeader\LuaHeader53.cs" />
@@ -74,6 +81,7 @@
     <Compile Include="LuaHelpers\Versions\LuaWriter\LuaWriter53.cs" />
     <Compile Include="LuaHelpers\Versions\LuaWriter\LuaWriter54.cs" />
     <Compile Include="LuaVersion.cs" />
+    <Compile Include="Writer.cs" />
     <Compile Include="WriterOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

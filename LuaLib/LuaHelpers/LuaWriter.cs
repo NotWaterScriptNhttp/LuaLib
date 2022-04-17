@@ -2,6 +2,7 @@
 using System.IO;
 
 using LuaLib.Emit;
+using LuaLib.LuaHelpers.Versions;
 using LuaLib.LuaHelpers.Versions.LuaWriter;
 
 namespace LuaLib.LuaHelpers
@@ -32,10 +33,18 @@ namespace LuaLib.LuaHelpers
         protected readonly int LuaInt = 0x5678;
         protected readonly double LuaNum = 370.5d;
 
-        //TODO: make this working
+        //TODO: make this a real max stack size calculator
         protected byte CalculateMaxStackSize(Function func)
         {
-            return func.maxstacksize;
+            // Temporary fix for this thing
+
+            byte biggestA = 0;
+
+            foreach (Instruction instr in func.Instructions)
+                if (instr.A > biggestA)
+                    biggestA = (byte)instr.A;
+
+            return biggestA; // even bigger bypass would be returning 255
         }
         protected byte[] DoEndian(byte[] data)
         {
@@ -75,7 +84,8 @@ namespace LuaLib.LuaHelpers
         internal abstract void DumpDebug(Function func, WriterOptions options);
         internal abstract void DumpFunction(Function func, WriterOptions options);
 
-        internal abstract void DumpHeader(Chunk chunk);
+        internal abstract void DumpHeader(LuaHeader header);
+        internal void DumpHeader(Chunk chunk) => DumpHeader(chunk.Header);
 
         internal abstract void DumpString(string str);
 
@@ -90,15 +100,18 @@ namespace LuaLib.LuaHelpers
         public byte[] GetWritenBytes() => writerOutput.ToArray();
         public void Write(string outfile) => File.WriteAllBytes(outfile, GetWritenBytes());
 
-        public static LuaWriter GetWriter(Chunk chunk, WriterOptions options)
+        public static LuaWriter GetWriter(LuaVersion version, Function func, WriterOptions options)
         {
+            if (options == null)
+                options = new WriterOptions();
+
             LuaWriter writer = null;
 
             #region Creating the right writer
             LuaVersion verToUse;
 
             if (options.KeepLuaVersion)
-                verToUse = chunk.Header.Version;
+                verToUse = version;
             else verToUse = options.NewLuaVersion;
 
             switch (verToUse)
@@ -119,28 +132,36 @@ namespace LuaLib.LuaHelpers
                     throw new Exception($"Didn't find any writer for ({verToUse})");
             }
 
-            writer.IsLittle = chunk.Header.IsLittleEndian;
-            writer.Is64Bit = chunk.Header.Is64Bit;
+            writer.IsLittle = options.IsChunk ? options.Header.IsLittleEndian : true;
+            writer.Is64Bit = options.IsChunk ? options.Header.Is64Bit : true;
             #endregion
 
-            writer.DumpHeader(chunk); // Dump the header for the new file
+            writer.DumpHeader(options.IsChunk ? options.Header : new Versions.LuaHeader.CustomLuaHeader(verToUse)); // Dump the header for the new file
 
             #region Name Checking
             // Adding the @ to the start cause lua expects it (i think)
 
-            string name = chunk.MainFunction.FuncName;
+            string name = func.FuncName;
 
             if (string.IsNullOrEmpty(name))
                 name = "@Unnamed.lua";
             if (!name.StartsWith("@"))
                 name = "@" + name;
 
-            chunk.MainFunction.FuncName = name;
+            func.FuncName = name;
             #endregion
 
-            writer.DumpFunction(chunk.MainFunction, options); // Write the Chunk + all the other things stored in the chunk
+            writer.DumpFunction(func, options); // Write the Chunk + all the other things stored in the chunk
 
             return writer;
+        }
+        public static LuaWriter GetWriter(Chunk chunk, WriterOptions options)
+        {
+            WriterOptions opts = options; // doing this cause we don't want to set the real options vars
+            opts.IsChunk = true;
+            opts.Header = chunk.Header;
+
+            return GetWriter(chunk.Header.Version, chunk.MainFunction, opts);
         }
     }
 }

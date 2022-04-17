@@ -81,9 +81,6 @@ namespace LuaLib.Emit
             }
         }
 
-        public bool IsMainChunk { get; internal set; }
-        public bool IsMainChunkChild { get; internal set; }
-
         public int LineDefined;
         public int LastLineDefined;
 
@@ -92,9 +89,13 @@ namespace LuaLib.Emit
         public byte is_vararg;
         public byte maxstacksize;
 
-        public string FuncName { get; internal set; } = "";
+        public string FuncName = "";
 
-        internal Function() {}
+        public bool IsMainChunk { get; internal set; }
+        public bool IsMainChunkChild { get; internal set; }
+
+        public Instruction DefingInstruction { get; internal set; } = null;
+        public Function Parent { get; internal set; } = null;
 
         internal static Function GetFunction(LuaReader reader, LuaVersion version)
         {
@@ -192,6 +193,71 @@ namespace LuaLib.Emit
             parser.GetDebug(function);
 
             return function;
+        }
+
+        //This thing currently only works for local names
+        public bool TryGetName()
+        {
+            if (IsMainChunk)
+                return false; // return cause main chunk always has a name
+
+            string newName = null;
+
+
+            if (Parent != null && DefingInstruction != null && Parent.LocalCount >= DefingInstruction.A)
+                newName = Parent.Locals[DefingInstruction.A - 1].Varname;
+
+
+            if (newName == null)
+                return false;
+
+            return true;
+        }
+        public Function Copy()
+        {
+            Constant[] consts = new Constant[ConstantCount];
+            Constants.CopyTo(consts);
+
+            Instruction[] instrs = new Instruction[InstructionCount];
+            Instructions.CopyTo(instrs);
+
+            Function[] funcs = new Function[FunctionCount];
+            for (int i = 0; i < FunctionCount; i++)
+                funcs[i] = Functions[i].Copy();
+
+            Local[] locals = new Local[LocalCount];
+            Locals.CopyTo(locals);
+
+            UpValue[] upvalues = new UpValue[UpValueCount];
+            UpValues.CopyTo(upvalues);
+
+            AbsLineInfo[] abslineinfo = new AbsLineInfo[AbsLineinfoCount];
+            AbsLineinfo.CopyTo(abslineinfo);
+
+            return new Function
+            {
+                Constants = new List<Constant>(consts),
+                Instructions = new List<Instruction>(instrs),
+                Functions = new List<Function>(funcs),
+                Locals = new List<Local>(locals),
+                UpValues = new List<UpValue>(upvalues),
+                AbsLineinfo = new List<AbsLineInfo>(abslineinfo),
+
+                lineinfo = lineinfo,
+
+                IsMainChunk = IsMainChunk,
+                IsMainChunkChild = IsMainChunkChild,
+
+                LineDefined = LineDefined,
+                LastLineDefined = LastLineDefined,
+
+                nups = nups,
+                numparams = numparams,
+                is_vararg = is_vararg,
+                maxstacksize = maxstacksize,
+
+                FuncName = FuncName
+            };
         }
 
         public override string ToString()

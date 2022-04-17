@@ -440,7 +440,7 @@ namespace LuaLib.Emit
             public static OpCodes GetOpcodeFromMap(LuaVersion version, int position)
             {
                 if (!Map.TryGetValue(version, out OpCodes[] opcodes))
-                    throw new Exception($"This lua version do not have a map");
+                    throw new Exception($"This lua version does not have a map");
 
                 if (opcodes.Length >= position)
                     return opcodes[position];
@@ -2843,14 +2843,18 @@ namespace LuaLib.Emit
         private LuaVersion version;
         private ConstsBase consts;
 
-        public OpCodes Opcode { get; private set; }
+        public OpCodes Opcode = OpCodes.INVALID;
+        public int OpcodeInt = -1;
         public int A, B, C, k;
         public int Ax, Bx;
         public int sB, sC, sBx, sJ;
 
         //Luau Registers
-        public int D { get => sBx; }
-        public int E { get => sJ; }
+        public int D { get => sBx; set => sBx = value; }
+        public int E { get => sJ; set => sJ = value; }
+
+        //Variable for users that need or want to store custom data in the instruction (ex: custom instruction structure)
+        public dynamic[] UserData;
 
         #region Main methods
         private bool IsNeg(int num) => num + num < num; // -10 + -10 = -20 thus doing Less than -10 will return true
@@ -2925,6 +2929,35 @@ namespace LuaLib.Emit
                 sJ = GetsJ(data);
         }
 
+        public Instruction(LuaVersion version = LuaVersion.LUA_VERSION_5_1)
+        {
+            this.version = version;
+
+            // Get the constants for the given lua version
+            switch (version)
+            {
+                case LuaVersion.LUA_VERSION_5_1:
+                    consts = new Consts51();
+                    break;
+                case LuaVersion.LUA_VERSION_5_2:
+                    consts = new Consts52();
+                    break;
+                case LuaVersion.LUA_VERSION_5_3:
+                    consts = new Consts52(); // Lua5.3 has the same consts as Lua5.2
+                    break;
+                case LuaVersion.LUA_VERSION_5_4:
+                    consts = new Consts54();
+                    break;
+                case LuaVersion.LUA_VERSION_U:
+                    consts = new ConstsU();
+                    break;
+                default:
+                    throw new Exception($"Cannot decode any instructions without constants ({version})");
+            }
+
+            consts.CalcMaxargs();
+            consts.CalcOffsets();
+        }
         public Instruction(uint data, LuaVersion version)
         {
             this.version = version;
@@ -2957,6 +2990,22 @@ namespace LuaLib.Emit
             Opcode = OpcodeMap.GetOpcodeFromMap(version, GetOpcode(data));
 
             UpdateRegisters(data);
+        }
+
+        public void UpdateOpcode(LuaVersion version = LuaVersion.LUA_VERSION_UNKNOWN)
+        {
+            if (version == LuaVersion.LUA_VERSION_UNKNOWN)
+                version = this.version;
+
+            if (OpcodeInt > -1)
+            {
+                Opcode = OpcodeMap.GetOpcodeFromMap(version, OpcodeInt);
+                OpcodeInt = -1;
+
+                return;
+            }
+
+            Opcode = OpCodes.INVALID;
         }
 
         internal uint GetRawInstruction()
@@ -3002,7 +3051,7 @@ namespace LuaLib.Emit
             string inQueue = "";
 
             builder.Append("Instruction: {\n");
-            builder.Append($" Opcode: {Opcode},\n");
+            builder.Append($" Opcode: {(Opcode == OpCodes.INVALID ? OpcodeInt : Opcode)},\n");
 
             Registers register = RegistersMap.GetRegister(version, Opcode, false);
 

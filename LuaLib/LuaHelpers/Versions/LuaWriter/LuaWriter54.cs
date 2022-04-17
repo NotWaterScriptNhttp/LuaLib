@@ -26,10 +26,8 @@ namespace LuaLib.LuaHelpers.Versions.LuaWriter
             }
         }
 
-        internal override void DumpHeader(Chunk chunk)
+        internal override void DumpHeader(LuaHelpers.LuaHeader header)
         {
-            LuaHelpers.LuaHeader header = chunk.Header;
-
             writer.Write(LuaSig); // Write the signature of luac
 
             writer.Write((byte)0x54); // Version of luac
