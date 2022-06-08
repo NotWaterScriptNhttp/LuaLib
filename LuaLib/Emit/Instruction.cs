@@ -3008,7 +3008,7 @@ namespace LuaLib.Emit
             Opcode = OpCodes.INVALID;
         }
 
-        internal uint GetRawInstruction()
+        public uint GetRawInstruction()
         {
             uint inst = 0;
 

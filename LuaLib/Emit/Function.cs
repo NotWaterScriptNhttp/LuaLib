@@ -200,6 +200,8 @@ namespace LuaLib.Emit
         {
             if (IsMainChunk)
                 return false; // return cause main chunk always has a name
+            if (!string.IsNullOrEmpty(FuncName))
+                return false;
 
             string newName = null;
 
@@ -207,9 +209,10 @@ namespace LuaLib.Emit
             if (Parent != null && DefingInstruction != null && Parent.LocalCount >= DefingInstruction.A)
                 newName = Parent.Locals[DefingInstruction.A - 1].Varname;
 
-
             if (newName == null)
                 return false;
+
+            FuncName = newName;
 
             return true;
         }
