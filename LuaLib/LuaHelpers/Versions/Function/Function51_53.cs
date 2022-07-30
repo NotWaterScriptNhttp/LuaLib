@@ -38,7 +38,8 @@ namespace LuaLib.LuaHelpers.Versions.Function
                         consts.Add(new Constant(ConstantType.STRING, lr.ReadString()));
                         break;
                     default:
-                        throw new Exception($"This constant is not valid '{ttype} -> ({(ConstantType)ttype})'");
+                        //throw new Exception($"This constant is not valid '{ttype} -> ({(ConstantType)ttype})'");
+                        break;
                 }
             }
 

@@ -58,6 +58,13 @@
     <Compile Include="Emit\Local.cs" />
     <Compile Include="Emit\OpCodes.cs" />
     <Compile Include="Emit\UpValue.cs" />
+    <None Include="LuaE\README.md" />
+    <Compile Include="LuaE\EChunk.cs" />
+    <Compile Include="LuaE\EFunction.cs" />
+    <Compile Include="LuaE\EInstruction.cs" />
+    <Compile Include="LuaE\ELocal.cs" />
+    <Compile Include="LuaE\EOpcode.cs" />
+    <Compile Include="LuaE\EValue.cs" />
     <Compile Include="LuaHelpers\CustomBinaryReader.cs" />
     <Compile Include="LuaHelpers\DecompilerBase.cs" />
     <Compile Include="LuaHelpers\FunctionParser.cs" />

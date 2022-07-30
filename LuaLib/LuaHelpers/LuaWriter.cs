@@ -44,7 +44,7 @@ namespace LuaLib.LuaHelpers
                 if (instr.A > biggestA)
                     biggestA = (byte)instr.A;
 
-            return biggestA; // even bigger bypass would be returning 255
+            return (byte)(biggestA + 1); // even bigger bypass would be returning 255
         }
         protected byte[] DoEndian(byte[] data)
         {

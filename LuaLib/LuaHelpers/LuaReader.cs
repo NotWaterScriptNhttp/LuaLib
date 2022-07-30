@@ -28,7 +28,7 @@ namespace LuaLib.LuaHelpers
 
         public void SkipBytes(int count = 1) => reader.ReadBytes(count);
 
-        public byte ReadByte() => reader.ReadByte();
+        public byte ReadByte(bool shift = true) => shift ? reader.ReadByte() : reader.Peek();
         public byte[] ReadBytes(int count)
         {
             byte[] bytes = reader.ReadBytes(count);
@@ -47,7 +47,7 @@ namespace LuaLib.LuaHelpers
         public ulong ReadUNumber64() => reader.ReadUInt64();
 
         // This function is stollen straight from source https://www.lua.org/source/5.4/lundump.c.html#loadUnsigned
-        protected ulong ReadUnsigned(ulong limit)
+        protected ulong ReadUnsigned(ulong limit, bool shift = true)
         {
             ulong x = 0;
             int b;
@@ -56,7 +56,7 @@ namespace LuaLib.LuaHelpers
 
             do
             {
-                b = ReadByte();
+                b = ReadByte(shift);
 
                 if (x >= limit)
                     throw new Exception("X can't be bigger than limit");
@@ -66,9 +66,26 @@ namespace LuaLib.LuaHelpers
 
             return x;
         }
-        virtual public ulong ReadSize()
+        virtual public ulong ReadSize(bool shift = true)
         {
-            return ReadUnsigned(~(ulong)0);
+            return ReadUnsigned(~(ulong)0, shift);
+        }
+        
+        public uint ReadVarInt()
+        {
+            uint result = 0;
+            int shift = 0;
+
+            byte b;
+
+            do
+            {
+                b = reader.ReadByte();
+                result |= ((uint)(b & 127)) << shift;
+                shift += 7;
+            } while ((b & 128) == 0);
+
+            return result;
         }
 
         public double ReadFloat()

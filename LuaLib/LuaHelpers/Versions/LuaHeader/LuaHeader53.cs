@@ -7,6 +7,7 @@ namespace LuaLib.LuaHelpers.Versions.LuaHeader
     {
         internal LuaHeader53(CustomBinaryReader br)
         {
+            VersionNumber = 5.3f;
             CheckTail(br);
 
             br.ReadByte(); // Skip the size of int cause it will always be 4

@@ -123,9 +123,10 @@ namespace LuaLib.LuaHelpers.Versions.LuaWriter
             writer.Write(func.numparams);
             writer.Write(func.is_vararg);
 
+            // idk if lua5.2+ supports more than 250 maxstack
             if (options.KeepOldMaxStacksize)
-                writer.Write(func.maxstacksize);
-            else writer.Write(CalculateMaxStackSize(func));
+                writer.Write((byte)Math.Min((long)func.maxstacksize, 250));
+            else writer.Write((byte)Math.Min((long)CalculateMaxStackSize(func), 250));
 
             DumpCode(func, options);
             DumpConstants(func, options);

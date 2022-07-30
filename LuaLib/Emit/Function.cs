@@ -18,6 +18,7 @@ namespace LuaLib.Emit
         }
 
         public List<Constant> Constants = new List<Constant>();
+        public List<string> Strings = new List<string>();
         public List<Instruction> Instructions = new List<Instruction>();
         public List<Function> Functions = new List<Function>();
 
@@ -27,12 +28,18 @@ namespace LuaLib.Emit
 
         public int[] lineinfo;
 
-
         public int ConstantCount
         {
             get
             {
                 return Constants.Count;
+            }
+        }
+        public int StringCount
+        {
+            get
+            {
+                return Strings.Count;
             }
         }
         public int InstructionCount
@@ -90,6 +97,7 @@ namespace LuaLib.Emit
         public byte maxstacksize;
 
         public string FuncName = "";
+        public uint MainId = 0;
 
         public bool IsMainChunk { get; internal set; }
         public bool IsMainChunkChild { get; internal set; }
@@ -97,7 +105,7 @@ namespace LuaLib.Emit
         public Instruction DefingInstruction { get; internal set; } = null;
         public Function Parent { get; internal set; } = null;
 
-        internal static Function GetFunction(LuaReader reader, LuaVersion version)
+        internal static Function GetClassicLuaFunction(LuaReader reader, LuaVersion version)
         {
             List<Instruction> GetInstructions()
             {
@@ -117,7 +125,7 @@ namespace LuaLib.Emit
                 int funcCount = reader.ReadNumber32();
 
                 for (int i = 0; i < funcCount; i++)
-                    functions.Add(GetFunction(reader, version));
+                    functions.Add(GetClassicLuaFunction(reader, version));
 
                 return functions;
             }
@@ -159,6 +167,8 @@ namespace LuaLib.Emit
                 case LuaVersion.LUA_VERSION_5_4:
                     parser = new Function54(reader);
                     break;
+                case LuaVersion.LUA_VERSION_U:
+                    break;
                 default:
                     throw new Exception($"No function parser for ({version})");
             }
@@ -168,7 +178,7 @@ namespace LuaLib.Emit
 
             function.LineDefined = reader.ReadNumber32();
             function.LastLineDefined = reader.ReadNumber32();
-            
+
             if (version == LuaVersion.LUA_VERSION_5_1)
                 function.nups = reader.ReadByte();
 
@@ -178,7 +188,7 @@ namespace LuaLib.Emit
 
             function.Instructions = GetInstructions();
             function.Constants = parser.GetConstants();
-            
+
             if (version <= LuaVersion.LUA_VERSION_5_2)
                 function.Functions = GetFunctions();
 
@@ -193,6 +203,146 @@ namespace LuaLib.Emit
             parser.GetDebug(function);
 
             return function;
+        }
+        internal static Function GetLuaUFunction(LuaReader reader)
+        {
+            Function func = new Function();
+
+            string ReadString()
+            {
+                uint id = (uint)reader.ReadSize();
+
+                return id == 0 ? null : func.Strings[(int)(id - 1)];
+            }
+
+            uint strcount = (uint)reader.ReadVarInt();
+            for (uint i = 0; i < strcount; i++)
+            {
+                uint len = (uint)reader.ReadVarInt();
+
+                func.Strings.Add(Encoding.UTF8.GetString(reader.ReadBytes((int)len)));
+            }
+
+            uint funccount = (uint)reader.ReadVarInt();
+            for (uint i = 0; i < funccount; i++)
+            {
+                Function p = new Function();
+                p.maxstacksize = reader.ReadByte();
+                p.numparams = reader.ReadByte();
+                p.nups = reader.ReadByte();
+                p.is_vararg = reader.ReadByte();
+
+                uint instrcount = (uint)reader.ReadVarInt();
+                for (uint j = 0; j < instrcount; j++)
+                    p.Instructions.Add(new Instruction(reader.ReadUNumber32(), LuaVersion.LUA_VERSION_U));
+
+                uint constcount = (uint)reader.ReadVarInt();
+                for (uint j = 0; j < constcount; j++)
+                {
+                    byte t;
+                    switch ((ConstantType)(t = reader.ReadByte()))
+                    {
+                        case ConstantType.NIL:
+                            p.Constants.Add(new Constant(ConstantType.NIL, null));
+                            break;
+                        case ConstantType.BOOLEAN:
+                            p.Constants.Add(new Constant(ConstantType.BOOLEAN, reader.ReadBoolean()));
+                            break;
+                        case ConstantType.LU_NUMBER:
+                            p.Constants.Add(new Constant(ConstantType.NUMBER, reader.ReadFloat(), ConstantType.LU_NUMBER));
+                            break;
+                        case ConstantType.LU_STRING:
+                            p.Constants.Add(new Constant(ConstantType.STRING, ReadString(), ConstantType.LU_STRING));
+                            break;
+                        case ConstantType.LU_IMPORT:
+                            //p.Constants.Add(new Constant(ConstantType.LU_IMPORT, )); looks like this won't be supported cause it requires some run time bullshit
+                            throw new ApplicationException("Luau import constant is not supported");
+                            break;
+                        case ConstantType.LU_TABLE:
+                            int keys = (int)reader.ReadVarInt();
+                            float[] data = new float[keys];
+
+                            for (int k = 0; k < keys; k++)
+                                data[k] = 0.0f;
+
+                            p.Constants.Add(new Constant(ConstantType.LU_TABLE, data));
+                            break;
+                        case ConstantType.LU_CLOSURE:
+                            uint fid = (uint)reader.ReadVarInt();
+                            p.Constants.Add(new Constant(ConstantType.LU_CLOSURE, func.Functions[(int)fid].Copy()));
+                            break;
+                        default:
+                            throw new ApplicationException($"Unknown constant type: {t}");
+                    }
+                }
+
+                uint pcount = (uint)reader.ReadVarInt();
+                for (uint j = 0; j < pcount; j++)
+                    reader.ReadVarInt(); // We already added functions to the list
+
+                p.LineDefined = (int)reader.ReadVarInt();
+                p.FuncName = ReadString();
+
+                if (reader.ReadBoolean())
+                {
+                    byte gaplog2 = reader.ReadByte();
+
+                    int interval = ((p.InstructionCount - 1) >> gaplog2) + 1;
+                    int absoffset = (p.InstructionCount + 1) & ~3;
+
+                    int lineinfosize = absoffset + interval * sizeof(int);
+                    p.lineinfo = new int[lineinfosize];
+
+                    byte lastoffset = 0;
+                    for (int j = 0; j < p.InstructionCount; j++)
+                        p.lineinfo[j] = (lastoffset += reader.ReadByte());
+
+                    int lastline = 0;
+                    for (int j = 0; j < interval; j++)
+                        p.AbsLineinfo.Add(new AbsLineInfo() { line = lastline += reader.ReadNumber32() });
+                }
+                if (reader.ReadBoolean())
+                {
+                    int localcount = (int)reader.ReadVarInt();
+
+                    for (int j = 0; j < localcount; j++)
+                    {
+                        Local loc = new Local();
+
+                        loc.Varname = ReadString();
+                        loc.StartPC = (int)reader.ReadVarInt();
+                        loc.EndPC = (int)reader.ReadVarInt();
+                        loc.Register = reader.ReadByte();
+
+                        p.Locals.Add(loc);
+                    }
+
+                    int upvalcount = (int)reader.ReadVarInt();
+                    for (int j = 0; j < upvalcount; j++)
+                        p.UpValues.Add(new UpValue() { Name = ReadString() });
+                }
+
+                func.Functions.Add(p);
+            }
+
+            func.MainId = (uint)reader.ReadVarInt();
+
+            return func;
+        }
+        internal static Function GetFunction(LuaReader reader, LuaVersion version, ChunkSettings settings)
+        {
+            switch (version)
+            {
+                case LuaVersion.LUA_VERSION_5_1:
+                case LuaVersion.LUA_VERSION_5_2:
+                case LuaVersion.LUA_VERSION_5_3:
+                case LuaVersion.LUA_VERSION_5_4:
+                    return GetClassicLuaFunction(reader, version);
+                case LuaVersion.LUA_VERSION_U:
+                    return GetLuaUFunction(reader);
+                default:
+                    throw new ApplicationException("Unknown lua version, can't get function data");
+            }
         }
 
         //This thing currently only works for local names

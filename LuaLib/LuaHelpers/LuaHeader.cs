@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Text;
 
 using LuaLib.LuaHelpers.Versions.LuaHeader;
@@ -29,11 +28,12 @@ namespace LuaLib.LuaHelpers
         protected const int LUA_INT = 0x5678;
         protected const double LUA_NUM = 370.5;
 
-        public LuaVersion Version { get; protected set; }
-        public byte Format { get; protected set; }
-        public bool IsLittleEndian { get; protected set; } = true;
-        public bool Is64Bit { get; protected set; }
-        public bool IsIntegral { get; protected set; } = false;
+        public LuaVersion Version { get; internal set; }
+        public float VersionNumber { get; internal set; }
+        public byte Format { get; internal set; } = 0;
+        public bool IsLittleEndian { get; internal set; } = true;
+        public bool Is64Bit { get; internal set; } = true;
+        public bool IsIntegral { get; internal set; } = false;
 
         internal LuaHeader() {}
         internal LuaHeader(LuaVersion ver) => Version = ver;

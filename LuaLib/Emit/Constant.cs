@@ -26,6 +26,15 @@ namespace LuaLib.Emit
         FALSE = 1,
         TRUE = 17,
         #endregion
+        #region Luau
+
+        LU_NUMBER = 2,
+        LU_STRING = 3,
+        LU_IMPORT = 4,
+        LU_TABLE = 5,
+        LU_CLOSURE = 6,
+
+        #endregion
     }
 
     public class Constant

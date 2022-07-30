@@ -36,7 +36,18 @@ namespace LuaLib
 
             //NOTE: Luau does not have a header
             if (settings.IsLuau)
+            {
                 header = new LuaHeader(LuaVersion.LUA_VERSION_U);
+                byte ver = br.ReadByte();
+
+                if (ver == 0)
+                    throw new ApplicationException("Some error happened durring the compile time");
+
+                if (ver != 2)
+                    throw new ApplicationException($"Bytecode version mismatch (expected: 2, got: {ver})");
+
+                header.VersionNumber = ver;
+            }
             else header = LuaHeader.GetHeader(br);
 
             chunk.Header = header;
@@ -58,18 +69,20 @@ namespace LuaLib
                     lr = new LuaReader54(br);
                     break;
                 case LuaVersion.LUA_VERSION_U:
+                    lr = new LuaReader53(br); // looks like that luau ver 2 has the same data storage
                     break;
                 default:
                     throw new Exception($"No reader for {header.Version}");
             }
 
-            if (header.Version >= LuaVersion.LUA_VERSION_5_3)
-                lr.ReadByte(); // UpvalueCount 
+            if (!settings.IsLuau)
+                if (header.Version >= LuaVersion.LUA_VERSION_5_3)
+                    lr.ReadByte(); // UpvalueCount 
 
             lr.UpdateEndian(header.IsLittleEndian);
             lr.UpdateArch(header.Is64Bit);
 
-            chunk.MainFunction = Function.GetFunction(lr, header.Version);
+            chunk.MainFunction = Function.GetFunction(lr, header.Version, settings);
             chunk.MainFunction.IsMainChunk = true;
 
             #region Some final non important things
@@ -82,7 +95,7 @@ namespace LuaLib
                 if (func.FunctionCount == 0)
                     return;
 
-                foreach(Instruction inst in func.Instructions)
+                foreach (Instruction inst in func.Instructions)
                     if (inst.Opcode == OpCodes.CLOSURE)
                     {
                         Function func2 = func.Functions[inst.Bx];
@@ -123,5 +136,16 @@ namespace LuaLib
             return true;
         }
         public static bool Write(Chunk chunk, string file, WriterOptions options = null) => chunk.Write(file, options);
+        public static bool Write(Function func, string file, LuaVersion targetVer, WriterOptions options = null)
+        {
+            if (options == null)
+                options = new WriterOptions();
+
+            options.Header = new LuaHeader(targetVer);
+
+            LuaWriter.GetWriter(targetVer, func, options).Write(file);
+
+            return true;
+        }    
     }
 }

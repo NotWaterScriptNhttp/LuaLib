@@ -98,6 +98,8 @@ namespace LuaLib.LuaHelpers
             UpdateBytes(0);
         }
 
+        public byte Peek() => (byte)br.PeekChar();
+
         public byte ReadByte()
         {
             UpdateBytes(1);
