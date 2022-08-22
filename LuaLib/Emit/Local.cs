@@ -1,12 +1,13 @@
 ﻿using System.Text;
 
-namespace LuaLib.Lua.Emit
+namespace LuaLib.Emit
 {
     public class Local
     {
         public string Varname;
         public int StartPC;
         public int EndPC;
+        public byte Register = 0;
 
         public override string ToString()
         {
@@ -16,6 +17,7 @@ namespace LuaLib.Lua.Emit
             sb.Append($" VarName: {Varname},\n");
             sb.Append($" StartPC: {StartPC},\n");
             sb.Append($" EndPC: {EndPC}\n");
+            sb.Append($" Register: {Register}\n");
             sb.Append("} - Local");
 
             return sb.ToString();
